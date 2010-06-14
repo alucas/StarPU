@@ -48,53 +48,53 @@ typedef union {
 
 struct starpu_copy_data_methods_s {
 	/* src type is ram */
-	int (*ram_to_ram)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*ram_to_cuda)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*ram_to_opencl)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*ram_to_spu)(starpu_data_handle handle, uint32_t src, uint32_t dst);
+	int (*ram_to_ram)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*ram_to_cuda)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*ram_to_opencl)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*ram_to_spu)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
 
 	/* src type is cuda */
-	int (*cuda_to_ram)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*cuda_to_cuda)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*cuda_to_opencl)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*cuda_to_spu)(starpu_data_handle handle, uint32_t src, uint32_t dst);
+	int (*cuda_to_ram)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*cuda_to_cuda)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*cuda_to_opencl)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*cuda_to_spu)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
 
 	/* src type is spu */
-	int (*spu_to_ram)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*spu_to_cuda)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*spu_to_opencl)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*spu_to_spu)(starpu_data_handle handle, uint32_t src, uint32_t dst);
+	int (*spu_to_ram)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*spu_to_cuda)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*spu_to_opencl)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*spu_to_spu)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
 
 	/* src type is opencl */
-	int (*opencl_to_ram)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*opencl_to_cuda)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*opencl_to_opencl)(starpu_data_handle handle, uint32_t src, uint32_t dst);
-	int (*opencl_to_spu)(starpu_data_handle handle, uint32_t src, uint32_t dst);
+	int (*opencl_to_ram)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*opencl_to_cuda)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*opencl_to_opencl)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
+	int (*opencl_to_spu)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst);
 
 #ifdef STARPU_USE_CUDA
 	/* for asynchronous CUDA transfers */
-	int (*ram_to_cuda_async)(starpu_data_handle handle, uint32_t src,
-					uint32_t dst, cudaStream_t *stream);
-	int (*cuda_to_ram_async)(starpu_data_handle handle, uint32_t src,
-					uint32_t dst, cudaStream_t *stream);
-	int (*cuda_to_cuda_async)(starpu_data_handle handle, uint32_t src,
-					uint32_t dst, cudaStream_t *stream);
+	int (*ram_to_cuda_async)(starpu_data_handle handle, starpu_memory_node src,
+					starpu_memory_node dst, cudaStream_t *stream);
+	int (*cuda_to_ram_async)(starpu_data_handle handle, starpu_memory_node src,
+					starpu_memory_node dst, cudaStream_t *stream);
+	int (*cuda_to_cuda_async)(starpu_data_handle handle, starpu_memory_node src,
+					starpu_memory_node dst, cudaStream_t *stream);
 #endif
 
 #ifdef STARPU_USE_OPENCL
 	/* for asynchronous OpenCL transfers */
-        int (*ram_to_opencl_async)(starpu_data_handle handle, uint32_t src, uint32_t dst, cl_event *event);
-	int (*opencl_to_ram_async)(starpu_data_handle handle, uint32_t src, uint32_t dst, cl_event *event);
-	int (*opencl_to_opencl_async)(starpu_data_handle handle, uint32_t src, uint32_t dst, cl_event *event);
+        int (*ram_to_opencl_async)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst, cl_event *event);
+	int (*opencl_to_ram_async)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst, cl_event *event);
+	int (*opencl_to_opencl_async)(starpu_data_handle handle, starpu_memory_node src, starpu_memory_node dst, cl_event *event);
 #endif
 };
 
-void _starpu_wake_all_blocked_workers_on_node(unsigned nodeid);
+void _starpu_wake_all_blocked_workers_on_node(starpu_memory_node node);
 
 __attribute__((warn_unused_result))
-int _starpu_driver_copy_data_1_to_1(starpu_data_handle handle, uint32_t node, 
-		uint32_t requesting_node, unsigned donotread, struct starpu_data_request_s *req, unsigned may_allloc);
+int _starpu_driver_copy_data_1_to_1(starpu_data_handle handle, starpu_memory_node node, 
+		starpu_memory_node requesting_node, unsigned donotread, struct starpu_data_request_s *req, unsigned may_allloc);
 
-unsigned _starpu_driver_test_request_completion(starpu_async_channel *async_channel, unsigned handling_node);
-void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel, unsigned handling_node);
+unsigned _starpu_driver_test_request_completion(starpu_async_channel *async_channel, starpu_memory_node handling_node);
+void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel, starpu_memory_node handling_node);
 #endif // __COPY_DRIVER_H__

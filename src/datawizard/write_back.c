@@ -16,7 +16,7 @@
 
 #include <datawizard/datawizard.h>
 
-void _starpu_write_through_data(starpu_data_handle handle, uint32_t requesting_node, 
+void _starpu_write_through_data(starpu_data_handle handle, starpu_memory_node requesting_node, 
 					   uint32_t write_through_mask)
 {
 	if ((write_through_mask & ~(1<<requesting_node)) == 0) {
@@ -28,14 +28,14 @@ void _starpu_write_through_data(starpu_data_handle handle, uint32_t requesting_n
 		_starpu_datawizard_progress(requesting_node, 1);
 
 	/* first commit all changes onto the nodes specified by the mask */
-	uint32_t node;
+	starpu_memory_node node;
 	for (node = 0; node < STARPU_MAXNODES; node++)
 	{
 		if (write_through_mask & (1<<node)) {
 			/* we need to commit the buffer on that node */
 			if (node != requesting_node) 
 			{
-				uint32_t handling_node =
+				starpu_memory_node handling_node =
 					_starpu_select_node_to_handle_request(requesting_node, node);
 
 				starpu_data_request_t r;

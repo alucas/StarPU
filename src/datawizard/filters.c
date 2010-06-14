@@ -132,7 +132,7 @@ void starpu_data_partition(starpu_data_handle initial_handle, starpu_filter *f)
 
 		children->sequential_consistency = initial_handle->sequential_consistency;
 
-		unsigned node;
+		starpu_memory_node node;
 		for (node = 0; node < STARPU_MAXNODES; node++)
 		{
 			children->per_node[node].state = 
@@ -148,10 +148,10 @@ void starpu_data_partition(starpu_data_handle initial_handle, starpu_filter *f)
 	_starpu_spin_unlock(&initial_handle->header_lock);
 }
 
-void starpu_data_unpartition(starpu_data_handle root_handle, uint32_t gathering_node)
+void starpu_data_unpartition(starpu_data_handle root_handle, starpu_memory_node gathering_node)
 {
 	unsigned child;
-	unsigned node;
+	starpu_memory_node node;
 
 	_starpu_spin_lock(&root_handle->header_lock);
 
@@ -241,7 +241,7 @@ void starpu_data_create_children(starpu_data_handle handle,
 	handle->children = calloc(nchildren, sizeof(struct starpu_data_state_t));
 	STARPU_ASSERT(handle->children);
 
-	unsigned node;
+	starpu_memory_node node;
 	unsigned child;
 
 	for (child = 0; child < nchildren; child++)

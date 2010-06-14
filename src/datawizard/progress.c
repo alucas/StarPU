@@ -19,7 +19,7 @@
 #include <datawizard/datawizard.h>
 #include <core/workers.h>
 
-void _starpu_datawizard_progress(uint32_t memory_node, unsigned may_alloc)
+void _starpu_datawizard_progress(starpu_memory_node memory_node, unsigned may_alloc)
 {
 	/* in case some other driver requested data */
 	_starpu_handle_pending_node_data_requests(memory_node);

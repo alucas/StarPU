@@ -19,6 +19,7 @@
 
 #include <starpu.h>
 #include <starpu_data.h>
+#include <starpu_memory_node.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,7 @@ extern "C" {
  * case 0 should be passed.
  */
 
-void *starpu_data_get_interface_on_node(starpu_data_handle handle, unsigned memory_node);
+void *starpu_data_get_interface_on_node(starpu_data_handle handle, starpu_memory_node memory_node);
 
 /* Matrix interface for dense matrices */
 typedef struct starpu_matrix_interface_s {
@@ -44,7 +45,7 @@ typedef struct starpu_matrix_interface_s {
 	size_t elemsize;
 } starpu_matrix_interface_t;
 
-void starpu_matrix_data_register(starpu_data_handle *handle, uint32_t home_node,
+void starpu_matrix_data_register(starpu_data_handle *handle, starpu_memory_node home_node,
                         uintptr_t ptr, uint32_t ld, uint32_t nx,
                         uint32_t ny, size_t elemsize);
 uint32_t starpu_matrix_get_nx(starpu_data_handle handle);
@@ -74,7 +75,7 @@ typedef struct starpu_block_interface_s {
 	size_t elemsize;
 } starpu_block_interface_t;
 
-void starpu_block_data_register(starpu_data_handle *handle, uint32_t home_node,
+void starpu_block_data_register(starpu_data_handle *handle, starpu_memory_node home_node,
                         uintptr_t ptr, uint32_t ldy, uint32_t ldz, uint32_t nx,
                         uint32_t ny, uint32_t nz, size_t elemsize);
 uint32_t starpu_block_get_nx(starpu_data_handle handle);
@@ -103,7 +104,7 @@ typedef struct starpu_vector_interface_s {
 	size_t elemsize;
 } starpu_vector_interface_t;
 
-void starpu_vector_data_register(starpu_data_handle *handle, uint32_t home_node,
+void starpu_vector_data_register(starpu_data_handle *handle, starpu_memory_node home_node,
                         uintptr_t ptr, uint32_t nx, size_t elemsize);
 uint32_t starpu_vector_get_nx(starpu_data_handle handle);
 size_t starpu_vector_get_elemsize(starpu_data_handle handle);
@@ -120,7 +121,7 @@ typedef struct starpu_variable_interface_s {
 	size_t elemsize;
 } starpu_variable_interface_t;
 
-void starpu_variable_data_register(starpu_data_handle *handle, uint32_t home_node,
+void starpu_variable_data_register(starpu_data_handle *handle, starpu_memory_node home_node,
                         uintptr_t ptr, size_t elemsize);
 size_t starpu_variable_get_elemsize(starpu_data_handle handle);
 uintptr_t starpu_variable_get_local_ptr(starpu_data_handle handle);
@@ -144,7 +145,7 @@ typedef struct starpu_csr_interface_s {
 	size_t elemsize;
 } starpu_csr_interface_t;
 
-void starpu_csr_data_register(starpu_data_handle *handle, uint32_t home_node, uint32_t nnz, uint32_t nrow,
+void starpu_csr_data_register(starpu_data_handle *handle, starpu_memory_node home_node, uint32_t nnz, uint32_t nrow,
 		uintptr_t nzval, uint32_t *colind, uint32_t *rowptr, uint32_t firstentry, size_t elemsize);
 uint32_t starpu_csr_get_nnz(starpu_data_handle handle);
 uint32_t starpu_csr_get_nrow(starpu_data_handle handle);
@@ -197,7 +198,7 @@ typedef struct starpu_bcsr_interface_s {
 	size_t elemsize;
 } starpu_bcsr_interface_t;
 
-void starpu_bcsr_data_register(starpu_data_handle *handle, uint32_t home_node, uint32_t nnz, uint32_t nrow,
+void starpu_bcsr_data_register(starpu_data_handle *handle, starpu_memory_node home_node, uint32_t nnz, uint32_t nrow,
 		uintptr_t nzval, uint32_t *colind, uint32_t *rowptr, uint32_t firstentry, uint32_t r, uint32_t c, size_t elemsize);
 
 

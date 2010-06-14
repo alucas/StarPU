@@ -53,12 +53,12 @@ typedef struct {
 
 void _starpu_init_memory_nodes(void);
 void _starpu_deinit_memory_nodes(void);
-void _starpu_set_local_memory_node_key(unsigned *node);
-unsigned _starpu_get_local_memory_node(void);
-unsigned _starpu_register_memory_node(starpu_node_kind kind);
-void _starpu_memory_node_attach_queue(struct starpu_jobq_s *q, unsigned nodeid);
+void _starpu_set_local_memory_node_key(starpu_memory_node *node);
+starpu_memory_node _starpu_get_local_memory_node(void);
+starpu_memory_node _starpu_register_memory_node(starpu_node_kind kind);
+void _starpu_memory_node_attach_queue(struct starpu_jobq_s *q, starpu_memory_node node);
 
-starpu_node_kind _starpu_get_node_kind(uint32_t node);
+starpu_node_kind _starpu_get_node_kind(starpu_memory_node node);
 unsigned _starpu_get_memory_nodes_count(void);
 
 inline starpu_mem_node_descr *_starpu_get_memory_node_description(void);

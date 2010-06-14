@@ -102,7 +102,7 @@ double _starpu_data_expected_penalty(struct starpu_jobq_s *q, struct starpu_task
 void _starpu_create_sampling_directory_if_needed(void);
 
 void _starpu_load_bus_performance_files(void);
-double _starpu_predict_transfer_time(unsigned src_node, unsigned dst_node, size_t size);
+double _starpu_predict_transfer_time(starpu_memory_node src_node, starpu_memory_node dst_node, size_t size);
 
 void _starpu_set_calibrate_flag(unsigned val);
 unsigned _starpu_get_calibrate_flag(void);

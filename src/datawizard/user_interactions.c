@@ -23,7 +23,7 @@
 
 /* Explicitly ask StarPU to allocate room for a piece of data on the specified
  * memory node. */
-int starpu_data_request_allocation(starpu_data_handle handle, uint32_t node)
+int starpu_data_request_allocation(starpu_data_handle handle, starpu_memory_node node)
 {
 	starpu_data_request_t r;
 
@@ -42,7 +42,7 @@ int starpu_data_request_allocation(starpu_data_handle handle, uint32_t node)
 struct state_and_node {
 	starpu_data_handle state;
 	starpu_access_mode mode;
-	unsigned node;
+	starpu_memory_node node;
 	pthread_cond_t cond;
 	pthread_mutex_t lock;
 	unsigned finished;
@@ -275,7 +275,7 @@ static void _prefetch_data_on_node(void *arg)
 
 }
 
-int _starpu_prefetch_data_on_node_with_mode(starpu_data_handle handle, unsigned node, unsigned async, starpu_access_mode mode)
+int _starpu_prefetch_data_on_node_with_mode(starpu_data_handle handle, starpu_memory_node node, unsigned async, starpu_access_mode mode)
 {
 	STARPU_ASSERT(handle);
 
@@ -316,7 +316,7 @@ int _starpu_prefetch_data_on_node_with_mode(starpu_data_handle handle, unsigned 
 	return 0;
 }
 
-int starpu_data_prefetch_on_node(starpu_data_handle handle, unsigned node, unsigned async)
+int starpu_data_prefetch_on_node(starpu_data_handle handle, starpu_memory_node node, unsigned async)
 {
 	return _starpu_prefetch_data_on_node_with_mode(handle, node, async, STARPU_R);
 }

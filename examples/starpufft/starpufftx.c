@@ -145,7 +145,7 @@ compute_roots(STARPUFFT(plan) plan)
 			unsigned nworkers = starpu_worker_get_count();
 			for (worker = 0; worker < nworkers; worker++)
 			{
-				unsigned node = starpu_worker_get_memory_node(worker);
+				starpu_memory_node node = starpu_worker_get_memory_node(worker);
 				if (starpu_worker_get_type(worker) == STARPU_CUDA_WORKER)
 					starpu_data_prefetch_on_node(plan->roots_handle[dim], node, 0);
 			}

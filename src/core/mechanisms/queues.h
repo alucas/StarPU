@@ -45,7 +45,7 @@ struct starpu_jobq_s {
 	uint32_t who;
 
 	/* this is only relevant if there is a single worker per queue */
-	uint32_t memory_node;
+	starpu_memory_node memory_node;
 	enum starpu_perf_archtype arch;
 	float alpha;
 

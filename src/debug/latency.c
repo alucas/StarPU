@@ -19,7 +19,7 @@
 #include <datawizard/coherency.h>
 
 void _starpu_benchmark_ping_pong(starpu_data_handle handle,
-			unsigned node0, unsigned node1, unsigned niter)
+			starpu_memory_node node0, starpu_memory_node node1, unsigned niter)
 {
 	/* We assume that no one is using that handle !! */
 	unsigned iter;

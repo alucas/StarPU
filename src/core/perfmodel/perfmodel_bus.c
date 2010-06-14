@@ -1008,7 +1008,7 @@ void _starpu_load_bus_performance_files(void)
 	load_bus_bandwidth_file();
 }
 
-double _starpu_predict_transfer_time(unsigned src_node, unsigned dst_node, size_t size)
+double _starpu_predict_transfer_time(starpu_memory_node src_node, starpu_memory_node dst_node, size_t size)
 {
 	double bandwidth = bandwidth_matrix[src_node][dst_node];
 	double latency = latency_matrix[src_node][dst_node];

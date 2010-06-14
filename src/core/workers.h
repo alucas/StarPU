@@ -76,7 +76,7 @@ struct starpu_worker_s {
 	int bindid; /* which cpu is the driver bound to ? */
 	int workerid; /* uniquely identify the worker among all processing units types */
         pthread_cond_t ready_cond; /* indicate when the worker is ready */
-	unsigned memory_node; /* which memory node is associated that worker to ? */
+	starpu_memory_node memory_node; /* which memory node is associated that worker to ? */
 	struct starpu_jobq_s *jobq; /* in which queue will that worker get/put tasks ? */
 	struct starpu_job_list_s *local_jobs; /* this queue contains tasks that have been explicitely submitted to that queue */
 	pthread_mutex_t local_jobs_mutex; /* protect the local_jobs list */
@@ -152,12 +152,12 @@ inline uint32_t _starpu_may_submit_cuda_task(void);
 inline uint32_t _starpu_may_submit_cpu_task(void);
 inline uint32_t _starpu_may_submit_opencl_task(void);
 inline uint32_t _starpu_worker_may_execute_task(unsigned workerid, uint32_t where);
-unsigned _starpu_worker_can_block(unsigned memnode);
+unsigned _starpu_worker_can_block(starpu_memory_node memnode);
 void _starpu_block_worker(int workerid, pthread_cond_t *cond, pthread_mutex_t *mutex);
 
-inline void _starpu_lock_all_queues_attached_to_node(unsigned node);
-inline void _starpu_unlock_all_queues_attached_to_node(unsigned node);
-inline void _starpu_broadcast_all_queues_attached_to_node(unsigned node);
+inline void _starpu_lock_all_queues_attached_to_node(starpu_memory_node node);
+inline void _starpu_unlock_all_queues_attached_to_node(starpu_memory_node node);
+inline void _starpu_broadcast_all_queues_attached_to_node(starpu_memory_node node);
 
 void _starpu_set_local_worker_key(struct starpu_worker_s *worker);
 struct starpu_worker_s *_starpu_get_local_worker_key(void);

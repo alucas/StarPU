@@ -42,10 +42,10 @@ static void generate_graph(void)
 	{
 		for (thick = 0; thick < nthick-1; thick++)
 		{
-			unsigned nodeA = NODE_NUMBER(theta, thick);
-			unsigned nodeB = NODE_NUMBER(theta, thick+1);
-			unsigned nodeC = NODE_NUMBER(theta+1, thick+1);
-			unsigned nodeD = NODE_NUMBER(theta+1, thick);
+			starpu_memory_node nodeA = NODE_NUMBER(theta, thick);
+			starpu_memory_node nodeB = NODE_NUMBER(theta, thick+1);
+			starpu_memory_node nodeC = NODE_NUMBER(theta+1, thick+1);
+			starpu_memory_node nodeD = NODE_NUMBER(theta+1, thick);
 
 			float colorA_R, colorB_R, colorC_R, colorD_R;
 			float colorA_G, colorB_G, colorC_G, colorD_G;

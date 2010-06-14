@@ -14,13 +14,10 @@
  * See the GNU Lesser General Public License in COPYING.LGPL for more details.
  */
 
-#ifndef __DW_WRITE_BACK_H__
-#define __DW_WRITE_BACK_H__
+#ifndef __STARPU_MEMORY_NODE_H__
+#define __STARPU_MEMORY_NODE_H__
 
 #include <starpu.h>
-#include <datawizard/coherency.h>
+#include <starpu_config.h>
 
-void _starpu_write_through_data(starpu_data_handle handle, starpu_memory_node requesting_node, 
-					   uint32_t write_through_mask);
-
-#endif // __DW_WRITE_BACK_H__
+#endif //__STARPU_MEMORY_NODE_H__

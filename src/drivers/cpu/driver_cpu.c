@@ -94,7 +94,7 @@ void *_starpu_cpu_worker(void *arg)
 {
 	struct starpu_worker_s *cpu_arg = arg;
 	struct starpu_jobq_s *jobq = cpu_arg->jobq;
-	unsigned memnode = cpu_arg->memory_node;
+	starpu_memory_node memnode = cpu_arg->memory_node;
 	int workerid = cpu_arg->workerid;
 	int devid = cpu_arg->devid;
 

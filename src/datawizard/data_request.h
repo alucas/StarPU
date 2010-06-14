@@ -34,10 +34,10 @@ LIST_TYPE(starpu_data_request,
 	unsigned refcnt;
 
 	starpu_data_handle handle;
-	uint32_t src_node;
-	uint32_t dst_node;
+	starpu_memory_node src_node;
+	starpu_memory_node dst_node;
 
-	uint32_t handling_node;
+	starpu_memory_node handling_node;
 
 	starpu_access_mode mode;
 
@@ -82,16 +82,16 @@ LIST_TYPE(starpu_data_requester,
 
 void _starpu_init_data_request_lists(void);
 void _starpu_deinit_data_request_lists(void);
-void _starpu_post_data_request(starpu_data_request_t r, uint32_t handling_node);
-void _starpu_handle_node_data_requests(uint32_t src_node, unsigned may_alloc);
+void _starpu_post_data_request(starpu_data_request_t r, starpu_memory_node handling_node);
+void _starpu_handle_node_data_requests(starpu_memory_node src_node, unsigned may_alloc);
 
-void _starpu_handle_pending_node_data_requests(uint32_t src_node);
-void _starpu_handle_all_pending_node_data_requests(uint32_t src_node);
+void _starpu_handle_pending_node_data_requests(starpu_memory_node src_node);
+void _starpu_handle_all_pending_node_data_requests(starpu_memory_node src_node);
 
-int _starpu_check_that_no_data_request_exists(uint32_t node);
+int _starpu_check_that_no_data_request_exists(starpu_memory_node node);
 
-starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, uint32_t handling_node, starpu_access_mode mode, unsigned is_prefetch);
-starpu_data_request_t _starpu_search_existing_data_request(starpu_data_handle handle, uint32_t dst_node, starpu_access_mode mode);
+starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, starpu_memory_node handling_node, starpu_access_mode mode, unsigned is_prefetch);
+starpu_data_request_t _starpu_search_existing_data_request(starpu_data_handle handle, starpu_memory_node dst_node, starpu_access_mode mode);
 int _starpu_wait_data_request_completion(starpu_data_request_t r, unsigned may_alloc);
 
 void _starpu_data_request_append_callback(starpu_data_request_t r,

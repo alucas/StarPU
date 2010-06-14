@@ -24,7 +24,7 @@
 #include "memalloc.h"
 #include "starpu_opencl.h"
 
-void _starpu_wake_all_blocked_workers_on_node(unsigned nodeid)
+void _starpu_wake_all_blocked_workers_on_node(starpu_memory_node node)
 {
 	/* wake up all queues on that node */
 	unsigned q_id;
@@ -33,11 +33,11 @@ void _starpu_wake_all_blocked_workers_on_node(unsigned nodeid)
 
 	PTHREAD_RWLOCK_RDLOCK(&descr->attached_queues_rwlock);
 
-	unsigned nqueues = descr->queues_count[nodeid];
+	unsigned nqueues = descr->queues_count[node];
 	for (q_id = 0; q_id < nqueues; q_id++)
 	{
 		struct starpu_jobq_s *q;
-		q  = descr->attached_queues_per_node[nodeid][q_id];
+		q  = descr->attached_queues_per_node[node][q_id];
 
 		/* wake anybody waiting on that queue */
 		PTHREAD_MUTEX_LOCK(&q->activity_mutex);
@@ -60,7 +60,7 @@ void starpu_wake_all_blocked_workers(void)
 	PTHREAD_MUTEX_UNLOCK(sched_mutex);
 
 	/* workers may be blocked on the various queues' conditions */
-	unsigned node;
+	starpu_memory_node node;
 	unsigned nnodes = _starpu_get_memory_nodes_count();
 	for (node = 0; node < nnodes; node++)
 	{
@@ -75,7 +75,7 @@ void starpu_wake_all_blocked_workers(void)
 static unsigned communication_cnt = 0;
 #endif
 
-static int copy_data_1_to_1_generic(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, struct starpu_data_request_s *req __attribute__((unused)))
+static int copy_data_1_to_1_generic(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, struct starpu_data_request_s *req __attribute__((unused)))
 {
 	int ret = 0;
 
@@ -190,8 +190,8 @@ cudaStream_t *stream;
 	return ret;
 }
 
-int __attribute__((warn_unused_result)) _starpu_driver_copy_data_1_to_1(starpu_data_handle handle, uint32_t src_node, 
-		uint32_t dst_node, unsigned donotread, struct starpu_data_request_s *req, unsigned may_alloc)
+int __attribute__((warn_unused_result)) _starpu_driver_copy_data_1_to_1(starpu_data_handle handle, starpu_memory_node src_node, 
+		starpu_memory_node dst_node, unsigned donotread, struct starpu_data_request_s *req, unsigned may_alloc)
 {
 	if (!donotread)
 	{
@@ -250,7 +250,7 @@ nomem:
 }
 
 void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel __attribute__ ((unused)),
-					unsigned handling_node)
+					starpu_memory_node handling_node)
 {
 	starpu_node_kind kind = _starpu_get_node_kind(handling_node);
 #ifdef STARPU_USE_CUDA
@@ -291,7 +291,7 @@ void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel 
 }
 
 unsigned _starpu_driver_test_request_completion(starpu_async_channel *async_channel __attribute__ ((unused)),
-					unsigned handling_node)
+					starpu_memory_node handling_node)
 {
 	starpu_node_kind kind = _starpu_get_node_kind(handling_node);
 	unsigned success;

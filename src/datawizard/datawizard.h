@@ -32,6 +32,6 @@
 
 #include <core/dependencies/implicit_data_deps.h>
 
-void _starpu_datawizard_progress(uint32_t memory_node, unsigned may_alloc);
+void _starpu_datawizard_progress(starpu_memory_node memory_node, unsigned may_alloc);
 
 #endif // __DATAWIZARD_H__

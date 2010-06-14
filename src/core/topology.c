@@ -601,7 +601,7 @@ void _starpu_bind_thread_on_cpu(struct starpu_machine_config_s *config __attribu
 static void _starpu_init_workers_binding(struct starpu_machine_config_s *config)
 {
 	/* launch one thread per CPU */
-	unsigned ram_memory_node;
+	starpu_memory_node ram_memory_node;
 
 	/* a single cpu is dedicated for the accelerators */
 	int accelerator_bindid = -1;
@@ -613,7 +613,7 @@ static void _starpu_init_workers_binding(struct starpu_machine_config_s *config)
 	unsigned worker;
 	for (worker = 0; worker < config->nworkers; worker++)
 	{
-		unsigned memory_node = -1;
+		starpu_memory_node memory_node = -1;
 		unsigned is_a_set_of_accelerators = 0;
 		struct starpu_worker_s *workerarg = &config->workers[worker];
 

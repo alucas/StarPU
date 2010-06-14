@@ -22,7 +22,7 @@
  */
 
 static void _starpu_register_new_data(starpu_data_handle handle,
-					uint32_t home_node, uint32_t wb_mask)
+					starpu_memory_node home_node, uint32_t wb_mask)
 {
 	STARPU_ASSERT(handle);
 
@@ -57,7 +57,7 @@ static void _starpu_register_new_data(starpu_data_handle handle,
 
 	/* that new data is invalid from all nodes perpective except for the
 	 * home node */
-	unsigned node;
+	starpu_memory_node node;
 	for (node = 0; node < STARPU_MAXNODES; node++)
 	{
 		if (node == home_node) {
@@ -90,7 +90,7 @@ static starpu_data_handle _starpu_data_handle_allocate(struct starpu_data_interf
 
 	size_t interfacesize = interface_ops->interface_size;
 
-	unsigned node;
+	starpu_memory_node node;
 	for (node = 0; node < STARPU_MAXNODES; node++)
 	{
 		handle->interface[node] = calloc(1, interfacesize);
@@ -100,7 +100,7 @@ static starpu_data_handle _starpu_data_handle_allocate(struct starpu_data_interf
 	return handle;
 }
 
-void _starpu_register_data_handle(starpu_data_handle *handleptr, uint32_t home_node,
+void _starpu_register_data_handle(starpu_data_handle *handleptr, starpu_memory_node home_node,
 				void *interface,
 				struct starpu_data_interface_ops_t *ops)
 {
@@ -122,13 +122,13 @@ void _starpu_register_data_handle(starpu_data_handle *handleptr, uint32_t home_n
 
 void starpu_data_free_interfaces(starpu_data_handle handle)
 {
-	unsigned node;
+	starpu_memory_node node;
 	for (node = 0; node < STARPU_MAXNODES; node++)
 		free(handle->interface[node]);
 }
 
 struct unregister_callback_arg {
-	unsigned memory_node;
+	starpu_memory_node memory_node;
 	starpu_data_handle handle;
 	unsigned terminated;
 	pthread_mutex_t mutex;
@@ -157,7 +157,7 @@ static void _starpu_data_unregister_fetch_data_callback(void *_arg)
 
 void starpu_data_unregister(starpu_data_handle handle)
 {
-	unsigned node;
+	starpu_memory_node node;
 
 	/* If sequential consistency is enabled, wait until data is available */
 	PTHREAD_MUTEX_LOCK(&handle->sequential_consistency_mutex);
@@ -190,7 +190,7 @@ void starpu_data_unregister(starpu_data_handle handle)
 	{
 		struct unregister_callback_arg arg;
 		arg.handle = handle;
-		arg.memory_node = (unsigned)home_node;
+		arg.memory_node = home_node;
 		arg.terminated = 0;
 		PTHREAD_MUTEX_INIT(&arg.mutex, NULL);
 		PTHREAD_COND_INIT(&arg.cond, NULL);
@@ -234,7 +234,7 @@ unsigned starpu_get_handle_interface_id(starpu_data_handle handle)
 	return handle->ops->interfaceid;
 }
 
-void *starpu_data_get_interface_on_node(starpu_data_handle handle, unsigned memory_node)
+void *starpu_data_get_interface_on_node(starpu_data_handle handle, starpu_memory_node memory_node)
 {
 	return handle->interface[memory_node];
 }

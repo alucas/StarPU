@@ -42,7 +42,7 @@ static starpu_job_t dmda_pop_task(struct starpu_jobq_s *q)
 
 static void update_data_requests(struct starpu_jobq_s *q, struct starpu_task *task)
 {
-	uint32_t memory_node = q->memory_node;
+	starpu_memory_node memory_node = q->memory_node;
 	unsigned nbuffers = task->cl->nbuffers;
 	unsigned buffer;
 

@@ -226,7 +226,7 @@ int _starpu_push_task(starpu_job_t j, unsigned job_is_already_locked)
 		
 		if (use_prefetch)
 		{
-			uint32_t memory_node = starpu_worker_get_memory_node(workerid); 
+			starpu_memory_node memory_node = starpu_worker_get_memory_node(workerid); 
 			_starpu_prefetch_task_input_on_node(task, memory_node);
 		}
 

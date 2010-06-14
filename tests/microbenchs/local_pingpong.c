@@ -32,8 +32,8 @@ static unsigned *v;
 
 static char worker_0_name[128];
 static char worker_1_name[128];
-static uint32_t memory_node_0;
-static uint32_t memory_node_1;
+static starpu_memory_node memory_node_0;
+static starpu_memory_node memory_node_1;
 
 struct timeval start;
 struct timeval end;

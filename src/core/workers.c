@@ -379,7 +379,7 @@ unsigned _starpu_machine_is_running(void)
 	return config.running;
 }
 
-unsigned _starpu_worker_can_block(unsigned memnode)
+unsigned _starpu_worker_can_block(starpu_memory_node memnode)
 {
 	unsigned can_block = 1;
 
@@ -401,7 +401,7 @@ typedef enum {
 	UNLOCK
 } queue_op;
 
-static void _starpu_operate_on_all_queues_attached_to_node(unsigned nodeid, queue_op op)
+static void _starpu_operate_on_all_queues_attached_to_node(starpu_memory_node node, queue_op op)
 {
 	unsigned q_id;
 	struct starpu_jobq_s *q;
@@ -410,11 +410,11 @@ static void _starpu_operate_on_all_queues_attached_to_node(unsigned nodeid, queu
 
 	PTHREAD_RWLOCK_RDLOCK(&descr->attached_queues_rwlock);
 
-	unsigned nqueues = descr->queues_count[nodeid];
+	unsigned nqueues = descr->queues_count[node];
 
 	for (q_id = 0; q_id < nqueues; q_id++)
 	{
-		q  = descr->attached_queues_per_node[nodeid][q_id];
+		q  = descr->attached_queues_per_node[node][q_id];
 		switch (op) {
 			case BROADCAST:
 				PTHREAD_COND_BROADCAST(&q->activity_cond);
@@ -431,17 +431,17 @@ static void _starpu_operate_on_all_queues_attached_to_node(unsigned nodeid, queu
 	PTHREAD_RWLOCK_UNLOCK(&descr->attached_queues_rwlock);
 }
 
-inline void _starpu_lock_all_queues_attached_to_node(unsigned node)
+inline void _starpu_lock_all_queues_attached_to_node(starpu_memory_node node)
 {
 	_starpu_operate_on_all_queues_attached_to_node(node, LOCK);
 }
 
-inline void _starpu_unlock_all_queues_attached_to_node(unsigned node)
+inline void _starpu_unlock_all_queues_attached_to_node(starpu_memory_node node)
 {
 	_starpu_operate_on_all_queues_attached_to_node(node, UNLOCK);
 }
 
-inline void _starpu_broadcast_all_queues_attached_to_node(unsigned node)
+inline void _starpu_broadcast_all_queues_attached_to_node(starpu_memory_node node)
 {
 	_starpu_operate_on_all_queues_attached_to_node(node, BROADCAST);
 }

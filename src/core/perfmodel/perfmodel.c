@@ -133,7 +133,7 @@ double _starpu_job_expected_length(uint32_t who, struct starpu_job_s *j, enum st
 /* Data transfer performance modeling */
 double _starpu_data_expected_penalty(struct starpu_jobq_s *q, struct starpu_task *task)
 {
-	uint32_t memory_node = q->memory_node;
+	starpu_memory_node memory_node = q->memory_node;
 	unsigned nbuffers = task->cl->nbuffers;
 	unsigned buffer;
 
@@ -152,7 +152,7 @@ double _starpu_data_expected_penalty(struct starpu_jobq_s *q, struct starpu_task
 		{
 			size_t size = handle->ops->get_size(handle);
 
-			uint32_t src_node = _starpu_select_src_node(handle);
+			starpu_memory_node src_node = _starpu_select_src_node(handle);
 
 			penalty += _starpu_predict_transfer_time(src_node, memory_node, size);
 		}

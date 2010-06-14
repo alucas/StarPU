@@ -76,7 +76,7 @@ void *gordon_worker_progress(void *arg)
 	return NULL;
 }
 
-static void starpu_to_gordon_buffers(starpu_job_t j, struct gordon_ppu_job_s *gordon_job, uint32_t memory_node)
+static void starpu_to_gordon_buffers(starpu_job_t j, struct gordon_ppu_job_s *gordon_job, starpu_memory_node memory_node)
 {
 	unsigned buffer;
 	unsigned nin = 0, ninout = 0, nout = 0;
@@ -163,7 +163,7 @@ static struct gordon_task_wrapper_s *starpu_to_gordon_job(starpu_job_t j)
 	gordon_job->index = j->task->cl->gordon_func;
 
 	/* we should not hardcore the memory node ... XXX */
-	unsigned memory_node = 0;
+	starpu_memory_node memory_node = 0;
 	starpu_to_gordon_buffers(j, gordon_job, memory_node);
 
 	return task_wrapper;
@@ -315,7 +315,7 @@ int inject_task_list(struct starpu_job_list_s *list, struct starpu_worker_s *wor
 			gordon_jobs[index].flags.sampling = 1;
 
 		/* we should not hardcore the memory node ... XXX */
-		unsigned memory_node = 0;
+		starpu_memory_node memory_node = 0;
 		starpu_to_gordon_buffers(j, &gordon_jobs[index], memory_node);
 		
 	}

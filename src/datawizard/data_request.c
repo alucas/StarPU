@@ -67,7 +67,7 @@ static void starpu_data_request_destroy(starpu_data_request_t r)
 }
 
 /* handle->lock should already be taken !  */
-starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, uint32_t handling_node, starpu_access_mode mode, unsigned is_prefetch)
+starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, starpu_memory_node handling_node, starpu_access_mode mode, unsigned is_prefetch)
 {
 	starpu_data_request_t r = starpu_data_request_new();
 
@@ -109,7 +109,7 @@ starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, uin
 }
 
 /* handle->lock should be taken */
-starpu_data_request_t _starpu_search_existing_data_request(starpu_data_handle handle, uint32_t dst_node, starpu_access_mode mode)
+starpu_data_request_t _starpu_search_existing_data_request(starpu_data_handle handle, starpu_memory_node dst_node, starpu_access_mode mode)
 {
 	starpu_data_request_t r = handle->per_node[dst_node].request;
 
@@ -141,7 +141,7 @@ int _starpu_wait_data_request_completion(starpu_data_request_t r, unsigned may_a
 	int retval;
 	int do_delete = 0;
 
-	uint32_t local_node = _starpu_get_local_memory_node();
+	starpu_memory_node local_node = _starpu_get_local_memory_node();
 
 	do {
 		_starpu_spin_lock(&r->lock);
@@ -178,7 +178,7 @@ int _starpu_wait_data_request_completion(starpu_data_request_t r, unsigned may_a
 }
 
 /* this is non blocking */
-void _starpu_post_data_request(starpu_data_request_t r, uint32_t handling_node)
+void _starpu_post_data_request(starpu_data_request_t r, starpu_memory_node handling_node)
 {
 //	fprintf(stderr, "POST REQUEST\n");
 
@@ -220,8 +220,8 @@ static void starpu_handle_data_request_completion(starpu_data_request_t r)
 	unsigned do_delete = 0;
 	starpu_data_handle handle = r->handle;
 
-	uint32_t src_node = r->src_node;
-	uint32_t dst_node = r->dst_node;
+	starpu_memory_node src_node = r->src_node;
+	starpu_memory_node dst_node = r->dst_node;
 
 	_starpu_update_data_state(handle, dst_node, r->mode);
 
@@ -319,7 +319,7 @@ static int starpu_handle_data_request(starpu_data_request_t r, unsigned may_allo
 	return 0;
 }
 
-void _starpu_handle_node_data_requests(uint32_t src_node, unsigned may_alloc)
+void _starpu_handle_node_data_requests(starpu_memory_node src_node, unsigned may_alloc)
 {
 	/* for all entries of the list */
 	starpu_data_request_t r;
@@ -365,7 +365,7 @@ void _starpu_handle_node_data_requests(uint32_t src_node, unsigned may_alloc)
 	starpu_data_request_list_delete(local_list);
 }
 
-static void _handle_pending_node_data_requests(uint32_t src_node, unsigned force)
+static void _handle_pending_node_data_requests(starpu_memory_node src_node, unsigned force)
 {
 //	fprintf(stderr, "_starpu_handle_pending_node_data_requests ...\n");
 
@@ -415,17 +415,17 @@ static void _handle_pending_node_data_requests(uint32_t src_node, unsigned force
 	starpu_data_request_list_delete(local_list);
 }
 
-void _starpu_handle_pending_node_data_requests(uint32_t src_node)
+void _starpu_handle_pending_node_data_requests(starpu_memory_node src_node)
 {
 	_handle_pending_node_data_requests(src_node, 0);
 }
 
-void _starpu_handle_all_pending_node_data_requests(uint32_t src_node)
+void _starpu_handle_all_pending_node_data_requests(starpu_memory_node src_node)
 {
 	_handle_pending_node_data_requests(src_node, 1);
 }
 
-int _starpu_check_that_no_data_request_exists(uint32_t node)
+int _starpu_check_that_no_data_request_exists(starpu_memory_node node)
 {
 	/* XXX lock that !!! that's a quick'n'dirty test */
 	int no_request = starpu_data_request_list_empty(data_requests[node]);

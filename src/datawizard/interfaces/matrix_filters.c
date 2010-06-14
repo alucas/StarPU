@@ -53,7 +53,7 @@ void starpu_block_filter_func(starpu_filter *f, starpu_data_handle root_handle)
 		starpu_data_handle chunk_handle =
 			starpu_data_get_child(root_handle, chunk);
 
-		unsigned node;
+		starpu_memory_node node;
 		for (node = 0; node < STARPU_MAXNODES; node++)
 		{
 			starpu_matrix_interface_t *local = 
@@ -106,7 +106,7 @@ void starpu_vertical_block_filter_func(starpu_filter *f, starpu_data_handle root
 		starpu_data_handle chunk_handle =
 			starpu_data_get_child(root_handle, chunk);
 
-		unsigned node;
+		starpu_memory_node node;
 		for (node = 0; node < STARPU_MAXNODES; node++)
 		{
 			starpu_matrix_interface_t *local =

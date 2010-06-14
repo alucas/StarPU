@@ -472,7 +472,7 @@ void build_mesh(point *mesh)
 	}
 }
 
-static unsigned long build_neighbour_vector(unsigned long*neighbours, unsigned node, int *RefArray, int *RefArrayBack)
+static unsigned long build_neighbour_vector(starpu_memory_node *neighbours, starpu_memory_node node, int *RefArray, int *RefArrayBack)
 {
 	/* where is that point in the former space ? */
 	int former = TRANSLATE(node);
@@ -493,7 +493,7 @@ static unsigned long build_neighbour_vector(unsigned long*neighbours, unsigned n
 				if ((former_theta + dtheta) >= 0 && (former_theta + dtheta) <= (int)ntheta )
 				{
 					/* we got a possible neighbour */
-					unsigned node = 
+					starpu_memory_node node = 
 						NODE_NUMBER((former_theta + dtheta), (former_thick + dthick));
 
 					neighbours[nneighbours++] = TRANSLATEBACK(node);
@@ -558,9 +558,9 @@ static void build_sparse_stiffness_matrix_B(point *pmesh, float *B, float *Bform
 	for (j = 0 ; j < newsize ; j++)
 	{
 
-		unsigned long neighbour;
+		starpu_memory_node neighbour;
 		unsigned long nneighbours;
-		unsigned long neighbours[9];
+		starpu_memory_node neighbours[9];
 
 		nneighbours = build_neighbour_vector(&neighbours[0], j, RefArray, RefArrayBack);
 
@@ -568,7 +568,7 @@ static void build_sparse_stiffness_matrix_B(point *pmesh, float *B, float *Bform
 
 		for (neighbour = 0; neighbour < nneighbours; neighbour++)
 		{
-			unsigned i = neighbours[neighbour]; 
+			starpu_memory_node i = neighbours[neighbour]; 
 			if (i >= newsize)
 			{
 				B[j] -= compute_A_value(TRANSLATE(i), TRANSLATE(j), pmesh)*Bformer[TRANSLATE(i)];
@@ -592,16 +592,16 @@ static unsigned build_sparse_stiffness_matrix_A(point *pmesh, float **nzval, uin
 	{
 		rowptr[j] = pos;
 
-		unsigned long neighbour;
+		starpu_memory_node neighbour;
 		unsigned long nneighbours;
-		unsigned long neighbours[9];
+		starpu_memory_node neighbours[9];
 
 		nneighbours = build_neighbour_vector(&neighbours[0], j, RefArray, RefArrayBack);
 
 		for (neighbour = 0; neighbour < nneighbours; neighbour++)
 		{
 			float val;
-			unsigned nodeneighbour =  neighbours[neighbour];
+			starpu_memory_node nodeneighbour =  neighbours[neighbour];
 
 			if (nodeneighbour < newsize) {
 
@@ -637,20 +637,20 @@ static void build_dense_stiffness_matrix_A(point *pmesh, float *A, unsigned news
 	/* now the actual stiffness (reordered) matrix*/
 	for (j = 0 ; j < newsize ; j++)
 	{
-		unsigned long neighbour;
+		starpu_memory_node neighbour;
 		unsigned long nneighbours;
-		unsigned long neighbours[9];
+		starpu_memory_node neighbours[9];
 
 		nneighbours = build_neighbour_vector(&neighbours[0], j, RefArray, RefArrayBack);
 
 		for (neighbour = 0; neighbour < nneighbours; neighbour++)
 		{
-			unsigned long nodeneighbour =  neighbours[neighbour];
+			starpu_memory_node nodeneighbour =  neighbours[neighbour];
 
 			if (nodeneighbour < newsize) {
 				float val;
 				val = compute_A_value(TRANSLATE(j), TRANSLATE(nodeneighbour), pmesh);
-				A[j+ (unsigned long)newsize*nodeneighbour] = val;
+				A[j+ (starpu_memory_node)newsize*nodeneighbour] = val;
 			}
 		}
 	}

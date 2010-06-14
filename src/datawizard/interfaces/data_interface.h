@@ -27,9 +27,9 @@
 
 struct starpu_data_interface_ops_t {
 	void (*register_data_handle)(starpu_data_handle handle,
-					uint32_t home_node, void *interface);
-	size_t (*allocate_data_on_node)(void *interface, uint32_t node);
-	void (*free_data_on_node)(void *interface, uint32_t node);
+					starpu_memory_node home_node, void *interface);
+	size_t (*allocate_data_on_node)(void *interface, starpu_memory_node node);
+	void (*free_data_on_node)(void *interface, starpu_memory_node node);
 	const struct starpu_copy_data_methods_s *copy_methods;
 	size_t (*get_size)(starpu_data_handle handle);
 	uint32_t (*footprint)(starpu_data_handle handle);
@@ -42,7 +42,7 @@ struct starpu_data_interface_ops_t {
 	size_t interface_size;
 };
 
-void _starpu_register_data_handle(starpu_data_handle *handleptr, uint32_t home_node,
+void _starpu_register_data_handle(starpu_data_handle *handleptr, starpu_memory_node home_node,
 				void *interface,
 				struct starpu_data_interface_ops_t *ops);
 

@@ -21,7 +21,7 @@ static pthread_rwlock_t mc_rwlock[STARPU_MAXNODES];
 static starpu_mem_chunk_list_t mc_list[STARPU_MAXNODES];
 static starpu_mem_chunk_list_t mc_list_to_free[STARPU_MAXNODES];
 
-static size_t free_memory_on_node(starpu_mem_chunk_t mc, uint32_t node);
+static size_t free_memory_on_node(starpu_mem_chunk_t mc, starpu_memory_node node);
 
 void _starpu_init_mem_chunk_lists(void)
 {
@@ -82,7 +82,7 @@ static void unlock_all_subtree(starpu_data_handle handle)
 	}
 }
 
-static unsigned may_free_subtree(starpu_data_handle handle, unsigned node)
+static unsigned may_free_subtree(starpu_data_handle handle, starpu_memory_node node)
 {
 	/* we only free if no one refers to the leaf */
 	uint32_t refcnt = _starpu_get_data_refcnt(handle, node);
@@ -105,7 +105,7 @@ static unsigned may_free_subtree(starpu_data_handle handle, unsigned node)
 	return 1;
 }
 
-static size_t do_free_mem_chunk(starpu_mem_chunk_t mc, unsigned node)
+static size_t do_free_mem_chunk(starpu_mem_chunk_t mc, starpu_memory_node node)
 {
 	size_t size;
 
@@ -121,8 +121,8 @@ static size_t do_free_mem_chunk(starpu_mem_chunk_t mc, unsigned node)
 	return size; 
 }
 
-static void transfer_subtree_to_node(starpu_data_handle handle, unsigned src_node, 
-						unsigned dst_node)
+static void transfer_subtree_to_node(starpu_data_handle handle, starpu_memory_node src_node, 
+						starpu_memory_node dst_node)
 {
 	unsigned i;
 	unsigned last = 0;
@@ -188,7 +188,7 @@ static void transfer_subtree_to_node(starpu_data_handle handle, unsigned src_nod
 	}
 }
 
-static size_t try_to_free_mem_chunk(starpu_mem_chunk_t mc, unsigned node)
+static size_t try_to_free_mem_chunk(starpu_mem_chunk_t mc, starpu_memory_node node)
 {
 	size_t freed = 0;
 
@@ -224,7 +224,7 @@ static size_t try_to_free_mem_chunk(starpu_mem_chunk_t mc, unsigned node)
 
 #ifdef STARPU_USE_ALLOCATION_CACHE
 /* we assume that mc_rwlock[node] is taken */
-static void reuse_mem_chunk(unsigned node, starpu_data_handle new_data, starpu_mem_chunk_t mc, unsigned is_already_in_mc_list)
+static void reuse_mem_chunk(starpu_memory_node node, starpu_data_handle new_data, starpu_mem_chunk_t mc, unsigned is_already_in_mc_list)
 {
 	starpu_data_handle old_data;
 	old_data = mc->data;
@@ -261,7 +261,7 @@ static void reuse_mem_chunk(unsigned node, starpu_data_handle new_data, starpu_m
 	}
 }
 
-static unsigned try_to_reuse_mem_chunk(starpu_mem_chunk_t mc, unsigned node, starpu_data_handle new_data, unsigned is_already_in_mc_list)
+static unsigned try_to_reuse_mem_chunk(starpu_mem_chunk_t mc, starpu_memory_node node, starpu_data_handle new_data, unsigned is_already_in_mc_list)
 {
 	unsigned success = 0;
 
@@ -295,7 +295,7 @@ static unsigned try_to_reuse_mem_chunk(starpu_mem_chunk_t mc, unsigned node, sta
 
 /* this function looks for a memory chunk that matches a given footprint in the
  * list of mem chunk that need to be freed */
-static unsigned try_to_find_reusable_mem_chunk(unsigned node, starpu_data_handle data, uint32_t footprint)
+static unsigned try_to_find_reusable_mem_chunk(starpu_memory_node node, starpu_data_handle data, uint32_t footprint)
 {
 	pthread_rwlock_wrlock(&mc_rwlock[node]);
 
@@ -356,7 +356,7 @@ static unsigned try_to_find_reusable_mem_chunk(unsigned node, starpu_data_handle
  * Free the memory chuncks that are explicitely tagged to be freed. The
  * mc_rwlock[node] rw-lock should be taken prior to calling this function.
  */
-static size_t perform_mc_removal_requests(uint32_t node)
+static size_t perform_mc_removal_requests(starpu_memory_node node)
 {
 	starpu_mem_chunk_t mc, next_mc;
 	
@@ -385,7 +385,7 @@ static size_t perform_mc_removal_requests(uint32_t node)
  * should only be used at the termination of StarPU for instance). The
  * mc_rwlock[node] rw-lock should be taken prior to calling this function.
  */
-static size_t free_potentially_in_use_mc(uint32_t node, unsigned force)
+static size_t free_potentially_in_use_mc(starpu_memory_node node, unsigned force)
 {
 	size_t freed = 0;
 
@@ -423,7 +423,7 @@ static size_t free_potentially_in_use_mc(uint32_t node, unsigned force)
  * 	returns 0 if no memory was released, 1 else
  */
 
-static size_t reclaim_memory(uint32_t node, size_t toreclaim __attribute__ ((unused)))
+static size_t reclaim_memory(starpu_memory_node node, size_t toreclaim __attribute__ ((unused)))
 {
 	int res;
 	size_t freed = 0;
@@ -448,7 +448,7 @@ static size_t reclaim_memory(uint32_t node, size_t toreclaim __attribute__ ((unu
  * (for the data replicates). This is not ensuring data coherency, and should
  * only be called while StarPU is getting shut down.
  */
-size_t _starpu_free_all_automatically_allocated_buffers(uint32_t node)
+size_t _starpu_free_all_automatically_allocated_buffers(starpu_memory_node node)
 {
 	int res;
 
@@ -468,7 +468,7 @@ size_t _starpu_free_all_automatically_allocated_buffers(uint32_t node)
 
 
 
-static void register_mem_chunk(starpu_data_handle handle, uint32_t dst_node, size_t size, unsigned automatically_allocated)
+static void register_mem_chunk(starpu_data_handle handle, starpu_memory_node dst_node, size_t size, unsigned automatically_allocated)
 {
 	int res;
 
@@ -503,7 +503,7 @@ static void register_mem_chunk(starpu_data_handle handle, uint32_t dst_node, siz
 
 /* This function is called when the handle is destroyed (eg. when calling
  * unregister or unpartition). */
-void _starpu_request_mem_chunk_removal(starpu_data_handle handle, unsigned node)
+void _starpu_request_mem_chunk_removal(starpu_data_handle handle, starpu_memory_node node)
 {
 	int res;
 	res = pthread_rwlock_wrlock(&mc_rwlock[node]);
@@ -539,7 +539,7 @@ void _starpu_request_mem_chunk_removal(starpu_data_handle handle, unsigned node)
 	STARPU_ASSERT(!res);
 }
 
-static size_t free_memory_on_node(starpu_mem_chunk_t mc, uint32_t node)
+static size_t free_memory_on_node(starpu_mem_chunk_t mc, starpu_memory_node node)
 {
 	size_t freed = 0;
 
@@ -597,7 +597,7 @@ static size_t free_memory_on_node(starpu_mem_chunk_t mc, uint32_t node)
  *
  */
 
-size_t _starpu_allocate_interface(starpu_data_handle handle, void *interface, uint32_t dst_node)
+size_t _starpu_allocate_interface(starpu_data_handle handle, void *interface, starpu_memory_node dst_node)
 {
 	unsigned attempts = 0;
 	size_t allocated_memory;
@@ -641,7 +641,7 @@ size_t _starpu_allocate_interface(starpu_data_handle handle, void *interface, ui
 	return allocated_memory;
 }
 
-int _starpu_allocate_memory_on_node(starpu_data_handle handle, uint32_t dst_node, unsigned may_alloc)
+int _starpu_allocate_memory_on_node(starpu_data_handle handle, starpu_memory_node dst_node, unsigned may_alloc)
 {
 	size_t allocated_memory;
 
@@ -671,7 +671,7 @@ int _starpu_allocate_memory_on_node(starpu_data_handle handle, uint32_t dst_node
 	return 0;
 }
 
-unsigned starpu_data_test_if_allocated_on_node(starpu_data_handle handle, uint32_t memory_node)
+unsigned starpu_data_test_if_allocated_on_node(starpu_data_handle handle, starpu_memory_node memory_node)
 {
 	return handle->per_node[memory_node].allocated;
 }

@@ -27,18 +27,18 @@
 #include <drivers/opencl/driver_opencl.h>
 #endif
 
-static int dummy_copy_ram_to_ram(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node);
+static int dummy_copy_ram_to_ram(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node);
 #ifdef STARPU_USE_CUDA
-static int copy_ram_to_cuda(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node);
-static int copy_cuda_to_ram(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node);
-static int copy_ram_to_cuda_async(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, cudaStream_t *stream);
-static int copy_cuda_to_ram_async(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, cudaStream_t *stream);
+static int copy_ram_to_cuda(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node);
+static int copy_cuda_to_ram(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node);
+static int copy_ram_to_cuda_async(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, cudaStream_t *stream);
+static int copy_cuda_to_ram_async(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, cudaStream_t *stream);
 #endif
 #ifdef STARPU_USE_OPENCL
-static int copy_ram_to_opencl(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node);
-static int copy_opencl_to_ram(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node);
-static int copy_ram_to_opencl_async(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, cl_event *event);
-static int copy_opencl_to_ram_async(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, cl_event *event);
+static int copy_ram_to_opencl(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node);
+static int copy_opencl_to_ram(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node);
+static int copy_ram_to_opencl_async(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, cl_event *event);
+static int copy_opencl_to_ram_async(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, cl_event *event);
 #endif
 
 static const struct starpu_copy_data_methods_s block_copy_data_methods_s = {
@@ -64,9 +64,9 @@ static const struct starpu_copy_data_methods_s block_copy_data_methods_s = {
 };
 
 
-static void register_block_handle(starpu_data_handle handle, uint32_t home_node, void *interface);
-static size_t allocate_block_buffer_on_node(void *interface_, uint32_t dst_node);
-static void free_block_buffer_on_node(void *interface, uint32_t node);
+static void register_block_handle(starpu_data_handle handle, starpu_memory_node home_node, void *interface);
+static size_t allocate_block_buffer_on_node(void *interface_, starpu_memory_node dst_node);
+static void free_block_buffer_on_node(void *interface, starpu_memory_node node);
 static size_t block_interface_get_size(starpu_data_handle handle);
 static uint32_t footprint_block_interface_crc32(starpu_data_handle handle);
 static void display_block_interface(starpu_data_handle handle, FILE *f);
@@ -99,11 +99,11 @@ int convert_block_to_gordon(void *interface, uint64_t *ptr, gordon_strideSize_t 
 }
 #endif
 
-static void register_block_handle(starpu_data_handle handle, uint32_t home_node, void *interface)
+static void register_block_handle(starpu_data_handle handle, starpu_memory_node home_node, void *interface)
 {
 	starpu_block_interface_t *block_interface = interface;
 
-	unsigned node;
+	starpu_memory_node node;
 	for (node = 0; node < STARPU_MAXNODES; node++)
 	{
 		starpu_block_interface_t *local_interface =
@@ -132,7 +132,7 @@ static void register_block_handle(starpu_data_handle handle, uint32_t home_node,
 }
 
 /* declare a new data with the BLAS interface */
-void starpu_block_data_register(starpu_data_handle *handleptr, uint32_t home_node,
+void starpu_block_data_register(starpu_data_handle *handleptr, starpu_memory_node home_node,
 			uintptr_t ptr, uint32_t ldy, uint32_t ldz, uint32_t nx,
 			uint32_t ny, uint32_t nz, size_t elemsize)
 {
@@ -210,7 +210,7 @@ uint32_t starpu_block_get_nz(starpu_data_handle handle)
 
 uint32_t starpu_block_get_local_ldy(starpu_data_handle handle)
 {
-	unsigned node;
+	starpu_memory_node node;
 	node = _starpu_get_local_memory_node();
 
 	STARPU_ASSERT(starpu_data_test_if_allocated_on_node(handle, node));
@@ -223,7 +223,7 @@ uint32_t starpu_block_get_local_ldy(starpu_data_handle handle)
 
 uint32_t starpu_block_get_local_ldz(starpu_data_handle handle)
 {
-	unsigned node;
+	starpu_memory_node node;
 	node = _starpu_get_local_memory_node();
 
 	STARPU_ASSERT(starpu_data_test_if_allocated_on_node(handle, node));
@@ -236,7 +236,7 @@ uint32_t starpu_block_get_local_ldz(starpu_data_handle handle)
 
 uintptr_t starpu_block_get_local_ptr(starpu_data_handle handle)
 {
-	unsigned node;
+	starpu_memory_node node;
 	node = _starpu_get_local_memory_node();
 
 	STARPU_ASSERT(starpu_data_test_if_allocated_on_node(handle, node));
@@ -259,7 +259,7 @@ size_t starpu_block_get_elemsize(starpu_data_handle handle)
 /* memory allocation/deallocation primitives for the BLOCK interface */
 
 /* returns the size of the allocated area */
-static size_t allocate_block_buffer_on_node(void *interface_, uint32_t dst_node)
+static size_t allocate_block_buffer_on_node(void *interface_, starpu_memory_node dst_node)
 {
 	uintptr_t addr = 0;
 	unsigned fail = 0;
@@ -335,7 +335,7 @@ static size_t allocate_block_buffer_on_node(void *interface_, uint32_t dst_node)
 	return allocated_memory;
 }
 
-static void free_block_buffer_on_node(void *interface, uint32_t node)
+static void free_block_buffer_on_node(void *interface, starpu_memory_node node)
 {
 	starpu_block_interface_t *block_interface = interface;
 
@@ -367,7 +367,7 @@ static void free_block_buffer_on_node(void *interface, uint32_t node)
 }
 
 #ifdef STARPU_USE_CUDA
-static int copy_cuda_to_ram(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node)
+static int copy_cuda_to_ram(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node)
 {
 	cudaError_t cures;
 
@@ -415,7 +415,7 @@ static int copy_cuda_to_ram(starpu_data_handle handle, uint32_t src_node, uint32
 	return 0;
 }
 
-static int copy_cuda_to_ram_async(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, cudaStream_t *stream)
+static int copy_cuda_to_ram_async(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, cudaStream_t *stream)
 {
 	starpu_block_interface_t *src_block;
 	starpu_block_interface_t *dst_block;
@@ -535,7 +535,7 @@ no_async_default:
 
 
 
-static int copy_ram_to_cuda_async(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, cudaStream_t *stream)
+static int copy_ram_to_cuda_async(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, cudaStream_t *stream)
 {
 	starpu_block_interface_t *src_block;
 	starpu_block_interface_t *dst_block;
@@ -653,7 +653,7 @@ no_async_default:
 	}
 }
 
-static int copy_ram_to_cuda(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node)
+static int copy_ram_to_cuda(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node)
 {
 	cudaError_t cures;
 
@@ -703,7 +703,7 @@ static int copy_ram_to_cuda(starpu_data_handle handle, uint32_t src_node, uint32
 #endif // STARPU_USE_CUDA
 
 #ifdef STARPU_USE_OPENCL
-static int copy_ram_to_opencl_async(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, cl_event *event) {
+static int copy_ram_to_opencl_async(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, cl_event *event) {
 	starpu_block_interface_t *src_block;
 	starpu_block_interface_t *dst_block;
 
@@ -722,7 +722,7 @@ static int copy_ram_to_opencl_async(starpu_data_handle handle, uint32_t src_node
 	return EAGAIN;
 }
 
-static int copy_opencl_to_ram_async(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, cl_event *event) {
+static int copy_opencl_to_ram_async(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node, cl_event *event) {
 	starpu_block_interface_t *src_block;
 	starpu_block_interface_t *dst_block;
 
@@ -741,7 +741,7 @@ static int copy_opencl_to_ram_async(starpu_data_handle handle, uint32_t src_node
 	return EAGAIN;
 }
 
-static int copy_ram_to_opencl(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node) {
+static int copy_ram_to_opencl(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node) {
 	starpu_block_interface_t *src_block;
 	starpu_block_interface_t *dst_block;
 
@@ -760,7 +760,7 @@ static int copy_ram_to_opencl(starpu_data_handle handle, uint32_t src_node, uint
 	return 0;
 }
 
-static int copy_opencl_to_ram(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node) {
+static int copy_opencl_to_ram(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node) {
 	starpu_block_interface_t *src_block;
 	starpu_block_interface_t *dst_block;
 
@@ -782,7 +782,7 @@ static int copy_opencl_to_ram(starpu_data_handle handle, uint32_t src_node, uint
 #endif
 
 /* as not all platform easily have a BLAS lib installed ... */
-static int dummy_copy_ram_to_ram(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node)
+static int dummy_copy_ram_to_ram(starpu_data_handle handle, starpu_memory_node src_node, starpu_memory_node dst_node)
 {
 	starpu_block_interface_t *src_block;
 	starpu_block_interface_t *dst_block;

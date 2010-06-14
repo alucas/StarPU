@@ -52,14 +52,14 @@ void _starpu_deinit_memory_nodes(void)
 	pthread_key_delete(memory_node_key);
 }
 
-void _starpu_set_local_memory_node_key(unsigned *node)
+void _starpu_set_local_memory_node_key(starpu_memory_node *node)
 {
 	pthread_setspecific(memory_node_key, node);
 }
 
-unsigned _starpu_get_local_memory_node(void)
+starpu_memory_node _starpu_get_local_memory_node(void)
 {
-	unsigned *memory_node;
+	starpu_memory_node *memory_node;
 	memory_node = pthread_getspecific(memory_node_key);
 	
 	/* in case this is called by the programmer, we assume the RAM node 
@@ -75,7 +75,7 @@ inline starpu_mem_node_descr *_starpu_get_memory_node_description(void)
 	return &descr;
 }
 
-inline starpu_node_kind _starpu_get_node_kind(uint32_t node)
+inline starpu_node_kind _starpu_get_node_kind(starpu_memory_node node)
 {
 	return descr.nodes[node];
 }
@@ -85,7 +85,7 @@ unsigned _starpu_get_memory_nodes_count(void)
 	return descr.nnodes;
 }
 
-unsigned _starpu_register_memory_node(starpu_node_kind kind)
+starpu_memory_node _starpu_register_memory_node(starpu_node_kind kind)
 {
 	unsigned nnodes;
 	/* ATOMIC_ADD returns the new value ... */
@@ -102,7 +102,7 @@ unsigned _starpu_register_memory_node(starpu_node_kind kind)
 
 /* TODO move in a more appropriate file  !! */
 /* attach a queue to a memory node (if it's not already attached) */
-void _starpu_memory_node_attach_queue(struct starpu_jobq_s *q, unsigned nodeid)
+void _starpu_memory_node_attach_queue(struct starpu_jobq_s *q, starpu_memory_node node)
 {
 	unsigned queue;
 	unsigned nqueues_total, nqueues;
@@ -110,10 +110,10 @@ void _starpu_memory_node_attach_queue(struct starpu_jobq_s *q, unsigned nodeid)
 	pthread_rwlock_wrlock(&descr.attached_queues_rwlock);
 
 	/* we only insert the queue if it's not already in the list */
-	nqueues = descr.queues_count[nodeid];
+	nqueues = descr.queues_count[node];
 	for (queue = 0; queue < nqueues; queue++)
 	{
-		if (descr.attached_queues_per_node[nodeid][queue] == q)
+		if (descr.attached_queues_per_node[node][queue] == q)
 		{
 			/* the queue is already in the list */
 			pthread_rwlock_unlock(&descr.attached_queues_rwlock);
@@ -122,8 +122,8 @@ void _starpu_memory_node_attach_queue(struct starpu_jobq_s *q, unsigned nodeid)
 	}
 
 	/* it was not found locally */
-	descr.attached_queues_per_node[nodeid][nqueues] = q;
-	descr.queues_count[nodeid]++;
+	descr.attached_queues_per_node[node][nqueues] = q;
+	descr.queues_count[node]++;
 
 	/* do we have to add it in the global list as well ? */
 	nqueues_total = descr.total_queues_count; 
@@ -144,7 +144,7 @@ void _starpu_memory_node_attach_queue(struct starpu_jobq_s *q, unsigned nodeid)
 	pthread_rwlock_unlock(&descr.attached_queues_rwlock);
 }
 
-unsigned starpu_worker_get_memory_node(unsigned workerid)
+starpu_memory_node starpu_worker_get_memory_node(unsigned workerid)
 {
 	struct starpu_worker_s *worker = _starpu_get_worker_struct(workerid);
 

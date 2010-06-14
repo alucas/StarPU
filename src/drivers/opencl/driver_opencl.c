@@ -197,7 +197,7 @@ void *_starpu_opencl_worker(void *arg)
 	fxt_register_thread(args->bindid);
 #endif
 
-	unsigned memnode = args->memory_node;
+	starpu_memory_node memnode = args->memory_node;
 	STARPU_TRACE_WORKER_INIT_START(STARPU_FUT_OPENCL_KEY, devid, memnode);
 
 	_starpu_bind_thread_on_cpu(args->config, args->bindid);

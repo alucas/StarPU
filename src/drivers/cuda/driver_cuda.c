@@ -172,7 +172,7 @@ void *_starpu_cuda_worker(void *arg)
 
 	int devid = args->devid;
 	int workerid = args->workerid;
-	unsigned memnode = args->memory_node;
+	starpu_memory_node memnode = args->memory_node;
 
 #ifdef STARPU_USE_FXT
 	_starpu_fxt_register_thread(args->bindid);
