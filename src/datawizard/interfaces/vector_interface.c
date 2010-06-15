@@ -96,7 +96,7 @@ static void register_vector_handle(starpu_data_handle handle, starpu_memory_node
 	starpu_vector_interface_t *vector_interface = interface;
 
 	starpu_memory_node node;
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		starpu_vector_interface_t *local_interface = 
 			starpu_data_get_interface_on_node(handle, node);

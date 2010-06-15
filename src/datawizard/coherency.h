@@ -37,7 +37,13 @@ typedef enum {
 } starpu_cache_state;
 
 /* this should contain the information relative to a given node */
-typedef struct starpu_local_data_state_t {
+struct starpu_data_chunk_t {
+   /* Associated node */
+   starpu_memory_node node;
+
+	/* describe the actual data layout */
+   void *interface;
+
 	/* describes the state of the local data in term of coherency */
 	starpu_cache_state	state; 
 
@@ -60,7 +66,7 @@ typedef struct starpu_local_data_state_t {
 	 */
 	uint8_t requested;
 	struct starpu_data_request_s *request;
-} starpu_local_data_state;
+};
 
 struct starpu_data_requester_list_s;
 
@@ -68,6 +74,8 @@ struct starpu_task_list {
 	struct starpu_task *task;
 	struct starpu_task_list *next;
 };
+
+   
 
 struct starpu_data_state_t {
 	struct starpu_data_requester_list_s *req_list;
@@ -88,10 +96,7 @@ struct starpu_data_state_t {
 	unsigned nchildren;
 
 	/* describe the state of the data in term of coherency */
-	starpu_local_data_state per_node[STARPU_MAXNODES];
-
-	/* describe the actual data layout */
-	void *interface[STARPU_MAXNODES];
+	struct starpu_data_chunk_t *per_node;
 
 	struct starpu_data_interface_ops_t *ops;
 

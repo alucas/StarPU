@@ -19,6 +19,9 @@
 
 #include <starpu.h>
 #include <common/config.h>
+#include <common/decls.h>
+#include <core/mechanisms/queues.h>
+
 
 /* In order to implement starpu_task_wait_for_all, we keep track of the number of
  * task currently submitted */

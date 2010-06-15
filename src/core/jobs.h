@@ -52,7 +52,7 @@ typedef void (*callback)(void *);
 #define STARPU_OPENCL_MAY_PERFORM(j)	((j)->task->cl->where & STARPU_OPENCL)
 
 /* a job is the internal representation of a task */
-LIST_TYPE(starpu_job,
+LIST_CREATE_TYPE(starpu_job,
 	struct starpu_task *task;
 
 	pthread_mutex_t sync_mutex;

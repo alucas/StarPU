@@ -42,27 +42,63 @@ struct dev_timing {
 	double timing_dtoh;
 };
 
-static double bandwidth_matrix[STARPU_MAXNODES][STARPU_MAXNODES] = {{-1.0}};
-static double latency_matrix[STARPU_MAXNODES][STARPU_MAXNODES] = {{ -1.0}};
-static unsigned was_benchmarked = 0;
-static unsigned ncpus = 0;
-static int ncuda = 0;
-static int nopencl = 0;
+static double * bandwidth_matrix;
+static double * latency_matrix;
+#define BANDWIDTH(s,d) bandwidth_matrix[s*starpu_memory_nodes_count()+d]
+#define LATENCY(s,d) latency_matrix[s*starpu_memory_nodes_count()+d]
 
-/* Benchmarking the performance of the bus */
+static unsigned was_benchmarked = 0;
+static unsigned int ncpus = 0;
+static unsigned int ncuda = 0;
+static unsigned int nopencl = 0;
 
 #ifdef STARPU_USE_CUDA
 static int cuda_affinity_matrix[STARPU_MAXCUDADEVS][MAXCPUS];
-static double cudadev_timing_htod[STARPU_MAXNODES] = {0.0};
-static double cudadev_timing_dtoh[STARPU_MAXNODES] = {0.0};
-static struct dev_timing cudadev_timing_per_cpu[STARPU_MAXNODES*MAXCPUS];
+static double *cudadev_timing_htod;
+static double *cudadev_timing_dtoh;
+static struct dev_timing *cudadev_timing_per_cpu;
 #endif
 #ifdef STARPU_USE_OPENCL
 static int opencl_affinity_matrix[STARPU_MAXOPENCLDEVS][MAXCPUS];
-static double opencldev_timing_htod[STARPU_MAXNODES] = {0.0};
-static double opencldev_timing_dtoh[STARPU_MAXNODES] = {0.0};
-static struct dev_timing opencldev_timing_per_cpu[STARPU_MAXNODES*MAXCPUS];
+static double *opencldev_timing_htod;
+static double *opencldev_timing_dtoh;
+static struct dev_timing *opencldev_timing_per_cpu;
 #endif
+
+void starpu_perfmodel_init() {
+   bandwidth_matrix = malloc(sizeof(double) * starpu_memory_nodes_count() * starpu_memory_nodes_count());
+   latency_matrix = malloc(sizeof(double) * starpu_memory_nodes_count() * starpu_memory_nodes_count());
+
+   unsigned int i,j;
+   for (i=0; i<starpu_memory_nodes_count(); i++) {
+      for (j=0; j<starpu_memory_nodes_count(); j++) {
+         bandwidth_matrix[i*starpu_memory_nodes_count() +j] = -1.0;
+         latency_matrix[i*starpu_memory_nodes_count() +j] = -1.0;
+      }
+   }
+
+   #ifdef STARPU_USE_CUDA
+   cudadev_timing_htod = malloc(sizeof(double) * starpu_memory_nodes_count());
+   cudadev_timing_dtoh = malloc(sizeof(double) * starpu_memory_nodes_count());
+   cudadev_timing_per_cpu = malloc(sizeof(struct dev_timing) * starpu_memory_nodes_count() * MAXCPUS);
+   for (i=0; i<starpu_memory_nodes_count(); i++) {
+      cudadev_timing_htod[i] = 0.0;
+      cudadev_timing_dtoh[i] = 0.0;
+   }
+   #endif
+   #ifdef STARPU_USE_OPENCL
+   opencldev_timing_htod = malloc(sizeof(double) * starpu_memory_nodes_count());
+   opencldev_timing_dtoh = malloc(sizeof(double) * starpu_memory_nodes_count());
+   opencldev_timing_per_cpu = malloc(sizeof(struct dev_timing) * starpu_memory_nodes_count() * MAXCPUS);
+   for (i=0; i<starpu_memory_nodes_count(); i++) {
+      opencldev_timing_htod[i] = 0.0;
+      opencldev_timing_dtoh[i] = 0.0;
+   }
+   #endif
+}
+
+/* Benchmarking the performance of the bus */
+
 
 #if defined(STARPU_USE_CUDA) || defined(STARPU_USE_OPENCL)
 
@@ -381,7 +417,7 @@ static void measure_bandwidth_between_host_and_dev(int dev, double *dev_timing_h
 static void benchmark_all_gpu_devices(void)
 {
 #if defined(STARPU_USE_CUDA) || defined(STARPU_USE_OPENCL)
-	int i, ret;
+	unsigned int i, ret;
 
 #ifdef STARPU_VERBOSE
 	fprintf(stderr, "Benchmarking the speed of the bus\n");
@@ -480,7 +516,7 @@ static void load_bus_affinity_file_content(void)
 #if defined(STARPU_USE_CUDA) || defined(STARPU_USE_OPENCL)
 	struct starpu_machine_config_s *config = _starpu_get_machine_config();
 	ncpus = _starpu_topology_get_nhwcpu(config);
-        int gpu;
+        unsigned int gpu;
 
 #ifdef STARPU_USE_CUDA
         cudaGetDeviceCount(&ncuda);
@@ -513,7 +549,7 @@ static void load_bus_affinity_file_content(void)
 	{
 		int ret;
 
-		int dummy;
+		unsigned int dummy;
 
 		starpu_drop_comments(f);
 		ret = fscanf(f, "%d\t", &dummy);
@@ -554,8 +590,8 @@ static void write_bus_affinity_file_content(void)
 	}
 
 #if defined(STARPU_USE_CUDA) || defined(STARPU_USE_OPENCL)
-	unsigned cpu;
-        int gpu;
+	unsigned int cpu;
+   unsigned int gpu;
 
         fprintf(f, "# GPU\t");
 	for (cpu = 0; cpu < ncpus; cpu++)
@@ -653,17 +689,17 @@ static void load_bus_latency_file_content(void)
 	f = fopen(path, "r");
 	STARPU_ASSERT(f);
 
-	for (src = 0; src < STARPU_MAXNODES; src++)
+	for (src = 0; src < starpu_memory_nodes_count(); src++)
 	{
 		starpu_drop_comments(f);
-		for (dst = 0; dst < STARPU_MAXNODES; dst++)
+		for (dst = 0; dst < starpu_memory_nodes_count(); dst++)
 		{
 			double latency;
 
 			n = fscanf(f, "%lf\t", &latency);
 			STARPU_ASSERT(n == 1);
 
-			latency_matrix[src][dst] = latency;
+			LATENCY(src,dst) = latency;
 		}
 
 		n = fscanf(f, "\n");
@@ -675,56 +711,56 @@ static void load_bus_latency_file_content(void)
 
 static void write_bus_latency_file_content(void)
 {
-        int src, dst, maxnode;
-	FILE *f;
+   unsigned int src, dst, maxnode;
+   FILE *f;
 
-	STARPU_ASSERT(was_benchmarked);
+   STARPU_ASSERT(was_benchmarked);
 
-	char path[256];
-	get_latency_path(path, 256);
+   char path[256];
+   get_latency_path(path, 256);
 
-	f = fopen(path, "w+");
-	if (!f)
-	{
-		perror("fopen");
-		STARPU_ABORT();
-	}
+   f = fopen(path, "w+");
+   if (!f)
+   {
+      perror("fopen");
+      STARPU_ABORT();
+   }
 
-	fprintf(f, "# ");
-	for (dst = 0; dst < STARPU_MAXNODES; dst++)
-		fprintf(f, "to %d\t\t", dst);
-	fprintf(f, "\n");
+   fprintf(f, "# ");
+   for (dst = 0; dst < starpu_memory_nodes_count(); dst++)
+      fprintf(f, "to %d\t\t", dst);
+   fprintf(f, "\n");
 
-        maxnode = ncuda;
+   maxnode = ncuda;
 #ifdef STARPU_USE_OPENCL
-        maxnode += nopencl;
+   maxnode += nopencl;
 #endif
-        for (src = 0; src < STARPU_MAXNODES; src++)
-	{
-		for (dst = 0; dst < STARPU_MAXNODES; dst++)
-		{
-			double latency;
+   for (src = 0; src < starpu_memory_nodes_count(); src++)
+   {
+      for (dst = 0; dst < starpu_memory_nodes_count(); dst++)
+      {
+         double latency;
 
-			if ((src > maxnode) || (dst > maxnode))
-			{
-				/* convention */
-				latency = -1.0;
-			}
-			else if (src == dst)
-			{
-				latency = 0.0;
-			}
-			else {
-                                latency = ((src && dst)?2000.0:500.0);
-			}
+         if ((src > maxnode) || (dst > maxnode))
+         {
+            /* convention */
+            latency = -1.0;
+         }
+         else if (src == dst)
+         {
+            latency = 0.0;
+         }
+         else {
+            latency = ((src && dst)?2000.0:500.0);
+         }
 
-			fprintf(f, "%lf\t", latency);
-		}
+         fprintf(f, "%lf\t", latency);
+      }
 
-		fprintf(f, "\n");
-	}
+      fprintf(f, "\n");
+   }
 
-	fclose(f);
+   fclose(f);
 }
 
 static void generate_bus_latency_file(void)
@@ -777,17 +813,17 @@ static void load_bus_bandwidth_file_content(void)
 		STARPU_ABORT();
 	}
 
-	for (src = 0; src < STARPU_MAXNODES; src++)
+	for (src = 0; src < starpu_memory_nodes_count(); src++)
 	{
 		starpu_drop_comments(f);
-		for (dst = 0; dst < STARPU_MAXNODES; dst++)
+		for (dst = 0; dst < starpu_memory_nodes_count(); dst++)
 		{
 			double bandwidth;
 
 			n = fscanf(f, "%lf\t", &bandwidth);
 			STARPU_ASSERT(n == 1);
 
-			bandwidth_matrix[src][dst] = bandwidth;
+			BANDWIDTH(src,dst) = bandwidth;
 		}
 
 		n = fscanf(f, "\n");
@@ -799,7 +835,7 @@ static void load_bus_bandwidth_file_content(void)
 
 static void write_bus_bandwidth_file_content(void)
 {
-	int src, dst, maxnode;
+	unsigned int src, dst, maxnode;
 	FILE *f;
 
 	STARPU_ASSERT(was_benchmarked);
@@ -811,7 +847,7 @@ static void write_bus_bandwidth_file_content(void)
 	STARPU_ASSERT(f);
 
 	fprintf(f, "# ");
-	for (dst = 0; dst < STARPU_MAXNODES; dst++)
+	for (dst = 0; dst < starpu_memory_nodes_count(); dst++)
 		fprintf(f, "to %d\t\t", dst);
 	fprintf(f, "\n");
 
@@ -819,9 +855,9 @@ static void write_bus_bandwidth_file_content(void)
 #ifdef STARPU_USE_OPENCL
         maxnode += nopencl;
 #endif
-	for (src = 0; src < STARPU_MAXNODES; src++)
+	for (src = 0; src < starpu_memory_nodes_count(); src++)
 	{
-		for (dst = 0; dst < STARPU_MAXNODES; dst++)
+		for (dst = 0; dst < starpu_memory_nodes_count(); dst++)
 		{
 			double bandwidth;
 
@@ -832,17 +868,17 @@ static void write_bus_bandwidth_file_content(void)
 #if defined(STARPU_USE_CUDA) || defined(STARPU_USE_OPENCL)
 			else if (src != dst)
 			{
-                                double time_src_to_ram=0.0, time_ram_to_dst=0.0;
-                                /* Bandwidth = (SIZE)/(time i -> ram + time ram -> j)*/
+            double time_src_to_ram=0.0, time_ram_to_dst=0.0;
+            /* Bandwidth = (SIZE)/(time i -> ram + time ram -> j)*/
 #ifdef STARPU_USE_CUDA
 				time_src_to_ram = (src==0)?0.0:cudadev_timing_dtoh[src];
-                                time_ram_to_dst = (dst==0)?0.0:cudadev_timing_htod[dst];
+            time_ram_to_dst = (dst==0)?0.0:cudadev_timing_htod[dst];
 #endif
 #ifdef STARPU_USE_OPENCL
-                                if (src > ncuda)
-                                        time_src_to_ram = (src==0)?0.0:opencldev_timing_dtoh[src-ncuda];
-                                if (dst > ncuda)
-                                        time_ram_to_dst = (dst==0)?0.0:opencldev_timing_htod[dst-ncuda];
+            if (src > ncuda)
+               time_src_to_ram = (src==0)?0.0:opencldev_timing_dtoh[src-ncuda];
+            if (dst > ncuda)
+               time_ram_to_dst = (dst==0)?0.0:opencldev_timing_htod[dst-ncuda];
 #endif
 
 				double timing =time_src_to_ram + time_ram_to_dst;
@@ -911,8 +947,8 @@ static void check_bus_config_file()
         }
         else {
                 FILE *f;
-                int ret, read_cuda, read_opencl;
-                unsigned read_cpus;
+                unsigned int ret, read_cuda, read_opencl;
+                unsigned int read_cpus;
                 struct starpu_machine_config_s *config = _starpu_get_machine_config();
 
                 // Loading configuration from file
@@ -1010,8 +1046,8 @@ void _starpu_load_bus_performance_files(void)
 
 double _starpu_predict_transfer_time(starpu_memory_node src_node, starpu_memory_node dst_node, size_t size)
 {
-	double bandwidth = bandwidth_matrix[src_node][dst_node];
-	double latency = latency_matrix[src_node][dst_node];
+	double bandwidth = BANDWIDTH(src_node->id,dst_node->id);
+	double latency = LATENCY(src_node->id,dst_node->id);
 
 	return latency + size/bandwidth;
 }

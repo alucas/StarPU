@@ -16,52 +16,13 @@
 
 #include <starpu.h>
 #include <common/config.h>
+#include <common/list.h>
 #include <datawizard/datawizard.h>
-
-/* requests that have not been treated at all */
-static starpu_data_request_list_t data_requests[STARPU_MAXNODES];
-static pthread_cond_t data_requests_list_cond[STARPU_MAXNODES];
-static pthread_mutex_t data_requests_list_mutex[STARPU_MAXNODES];
-
-/* requests that are not terminated (eg. async transfers) */
-static starpu_data_request_list_t data_requests_pending[STARPU_MAXNODES];
-static pthread_cond_t data_requests_pending_list_cond[STARPU_MAXNODES];
-static pthread_mutex_t data_requests_pending_list_mutex[STARPU_MAXNODES];
-
-void _starpu_init_data_request_lists(void)
-{
-	unsigned i;
-	for (i = 0; i < STARPU_MAXNODES; i++)
-	{
-		data_requests[i] = starpu_data_request_list_new();
-		PTHREAD_MUTEX_INIT(&data_requests_list_mutex[i], NULL);
-		PTHREAD_COND_INIT(&data_requests_list_cond[i], NULL);
-
-		data_requests_pending[i] = starpu_data_request_list_new();
-		PTHREAD_MUTEX_INIT(&data_requests_pending_list_mutex[i], NULL);
-		PTHREAD_COND_INIT(&data_requests_pending_list_cond[i], NULL);
-	}
-}
-
-void _starpu_deinit_data_request_lists(void)
-{
-	unsigned i;
-	for (i = 0; i < STARPU_MAXNODES; i++)
-	{
-		PTHREAD_COND_DESTROY(&data_requests_pending_list_cond[i]);
-		PTHREAD_MUTEX_DESTROY(&data_requests_pending_list_mutex[i]);
-		starpu_data_request_list_delete(data_requests_pending[i]);
-
-		PTHREAD_COND_DESTROY(&data_requests_list_cond[i]);
-		PTHREAD_MUTEX_DESTROY(&data_requests_list_mutex[i]);
-		starpu_data_request_list_delete(data_requests[i]);
-	}
-}
 
 /* this should be called with the lock r->handle->header_lock taken */
 static void starpu_data_request_destroy(starpu_data_request_t r)
 {
-	r->handle->per_node[r->dst_node].request = NULL;
+	r->handle->per_node[r->dst_node->id].request = NULL;
 
 	starpu_data_request_delete(r);
 }
@@ -83,7 +44,7 @@ starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, sta
 	r->completed = 0;
 	r->retval = -1;
 
-	r->next_req_count = 0;
+	r->next_req = NULL;
 
 	r->callbacks = NULL;
 
@@ -94,12 +55,12 @@ starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, sta
 
 	_starpu_spin_lock(&r->lock);
 
-	handle->per_node[dst_node].request = r;
+	handle->per_node[dst_node->id].request = r;
 
-	handle->per_node[dst_node].refcnt++;
+	handle->per_node[dst_node->id].refcnt++;
 
 	if (mode & STARPU_R)
-		handle->per_node[src_node].refcnt++;
+		handle->per_node[src_node->id].refcnt++;
 
 	r->refcnt = 1;
 
@@ -111,7 +72,7 @@ starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, sta
 /* handle->lock should be taken */
 starpu_data_request_t _starpu_search_existing_data_request(starpu_data_handle handle, starpu_memory_node dst_node, starpu_access_mode mode)
 {
-	starpu_data_request_t r = handle->per_node[dst_node].request;
+	starpu_data_request_t r = handle->per_node[dst_node->id].request;
 
 	if (r)
 	{
@@ -124,7 +85,7 @@ starpu_data_request_t _starpu_search_existing_data_request(starpu_data_handle ha
 			 * transfer yet, we have to increment the refcnt now
 			 * (so that the source remains valid) */
 			if (!(r->mode & STARPU_R))
-				handle->per_node[dst_node].refcnt++;
+				handle->per_node[dst_node->id].refcnt++;
 
 			r->mode |= STARPU_R;
 		}
@@ -178,22 +139,22 @@ int _starpu_wait_data_request_completion(starpu_data_request_t r, unsigned may_a
 }
 
 /* this is non blocking */
-void _starpu_post_data_request(starpu_data_request_t r, starpu_memory_node handling_node)
+void starpu_post_data_request(starpu_data_request_t r, starpu_memory_node handling_node)
 {
 //	fprintf(stderr, "POST REQUEST\n");
 
 	if (r->mode & STARPU_R)
 	{
-		STARPU_ASSERT(r->handle->per_node[r->src_node].allocated);
-		STARPU_ASSERT(r->handle->per_node[r->src_node].refcnt);
+		STARPU_ASSERT(r->handle->per_node[r->src_node->id].allocated);
+		STARPU_ASSERT(r->handle->per_node[r->src_node->id].refcnt);
 	}
 
 	/* insert the request in the proper list */
-	PTHREAD_MUTEX_LOCK(&data_requests_list_mutex[handling_node]);
+	PTHREAD_MUTEX_LOCK(&handling_node->data_requests_list_mutex);
 
-	starpu_data_request_list_push_front(data_requests[handling_node], r);
+	starpu_data_request_list_push_front(handling_node->data_requests, r);
 
-	PTHREAD_MUTEX_UNLOCK(&data_requests_list_mutex[handling_node]);
+	PTHREAD_MUTEX_UNLOCK(&handling_node->data_requests_list_mutex);
 
 	_starpu_wake_all_blocked_workers_on_node(handling_node);
 }
@@ -230,18 +191,18 @@ static void starpu_handle_data_request_completion(starpu_data_request_t r)
 	STARPU_TRACE_END_DRIVER_COPY(src_node, dst_node, size, r->com_id);
 #endif
 
-	unsigned chained_req;
-	for (chained_req = 0; chained_req < r->next_req_count; chained_req++)
-	{
-		_starpu_post_data_request(r->next_req[chained_req], r->next_req[chained_req]->handling_node);
+	starpu_data_request_t req = r->next_req;
+   while (req != NULL) {
+      starpu_post_data_request(r->next_req, r->next_req->handling_node);
+      req = req->next_req;
 	}
 
 	r->completed = 1;
 	
-	handle->per_node[dst_node].refcnt--;
+	handle->per_node[dst_node->id].refcnt--;
 
 	if (r->mode & STARPU_R)
-		handle->per_node[src_node].refcnt--;
+		handle->per_node[src_node->id].refcnt--;
 
 	r->refcnt--;
 
@@ -284,8 +245,8 @@ static int starpu_handle_data_request(starpu_data_request_t r, unsigned may_allo
 
 	if (r->mode & STARPU_R)
 	{
-		STARPU_ASSERT(handle->per_node[r->src_node].allocated);
-		STARPU_ASSERT(handle->per_node[r->src_node].refcnt);
+		STARPU_ASSERT(handle->per_node[r->src_node->id].allocated);
+		STARPU_ASSERT(handle->per_node[r->src_node->id].refcnt);
 	}
 
 	/* perform the transfer */
@@ -306,9 +267,9 @@ static int starpu_handle_data_request(starpu_data_request_t r, unsigned may_allo
 		_starpu_spin_unlock(&handle->header_lock);
 
 		/* the request is pending and we put it in the corresponding queue  */
-		PTHREAD_MUTEX_LOCK(&data_requests_pending_list_mutex[r->handling_node]);
-		starpu_data_request_list_push_front(data_requests_pending[r->handling_node], r);
-		PTHREAD_MUTEX_UNLOCK(&data_requests_pending_list_mutex[r->handling_node]);
+		PTHREAD_MUTEX_LOCK(&r->handling_node->data_requests_pending_list_mutex);
+		starpu_data_request_list_push_front(r->handling_node->data_requests_pending, r);
+		PTHREAD_MUTEX_UNLOCK(&r->handling_node->data_requests_pending_list_mutex);
 
 		return EAGAIN;
 	}
@@ -325,21 +286,21 @@ void _starpu_handle_node_data_requests(starpu_memory_node src_node, unsigned may
 	starpu_data_request_t r;
 
 	/* take all the entries from the request list */
-        PTHREAD_MUTEX_LOCK(&data_requests_list_mutex[src_node]);
+        PTHREAD_MUTEX_LOCK(&src_node->data_requests_list_mutex);
 
-	starpu_data_request_list_t local_list = data_requests[src_node];
+	starpu_data_request_list_t local_list = src_node->data_requests;
 
 	if (starpu_data_request_list_empty(local_list))
 	{
 		/* there is no request */
-                PTHREAD_MUTEX_UNLOCK(&data_requests_list_mutex[src_node]);
+                PTHREAD_MUTEX_UNLOCK(&src_node->data_requests_list_mutex);
 
 		return;
 	}
 
-	data_requests[src_node] = starpu_data_request_list_new();
+	src_node->data_requests = starpu_data_request_list_new();
 
-	PTHREAD_MUTEX_UNLOCK(&data_requests_list_mutex[src_node]);
+	PTHREAD_MUTEX_UNLOCK(&src_node->data_requests_list_mutex);
 
 	while (!starpu_data_request_list_empty(local_list))
 	{
@@ -350,11 +311,11 @@ void _starpu_handle_node_data_requests(starpu_memory_node src_node, unsigned may
 		res = starpu_handle_data_request(r, may_alloc);
 		if (res == ENOMEM)
 		{
-                        PTHREAD_MUTEX_LOCK(&data_requests_list_mutex[src_node]);
+         PTHREAD_MUTEX_LOCK(&src_node->data_requests_list_mutex);
 
-			starpu_data_request_list_push_front(data_requests[src_node], r);
+			starpu_data_request_list_push_front(src_node->data_requests, r);
 
-			PTHREAD_MUTEX_UNLOCK(&data_requests_list_mutex[src_node]);
+			PTHREAD_MUTEX_UNLOCK(&src_node->data_requests_list_mutex);
 		}
 
 		/* wake the requesting worker up */
@@ -369,13 +330,13 @@ static void _handle_pending_node_data_requests(starpu_memory_node src_node, unsi
 {
 //	fprintf(stderr, "_starpu_handle_pending_node_data_requests ...\n");
 
-	PTHREAD_MUTEX_LOCK(&data_requests_pending_list_mutex[src_node]);
+	PTHREAD_MUTEX_LOCK(&src_node->data_requests_pending_list_mutex);
 
 	/* for all entries of the list */
-	starpu_data_request_list_t local_list = data_requests_pending[src_node];
-	data_requests_pending[src_node] = starpu_data_request_list_new();
+	starpu_data_request_list_t local_list = src_node->data_requests_pending;
+	src_node->data_requests_pending = starpu_data_request_list_new();
 
-	PTHREAD_MUTEX_UNLOCK(&data_requests_pending_list_mutex[src_node]);
+	PTHREAD_MUTEX_UNLOCK(&src_node->data_requests_pending_list_mutex);
 
 	while (!starpu_data_request_list_empty(local_list))
 	{
@@ -405,9 +366,9 @@ static void _handle_pending_node_data_requests(starpu_memory_node src_node, unsi
 				_starpu_spin_unlock(&handle->header_lock);
 
 				/* wake the requesting worker up */
-				PTHREAD_MUTEX_LOCK(&data_requests_pending_list_mutex[src_node]);
-				starpu_data_request_list_push_front(data_requests_pending[src_node], r);
-				PTHREAD_MUTEX_UNLOCK(&data_requests_pending_list_mutex[src_node]);
+				PTHREAD_MUTEX_LOCK(&src_node->data_requests_pending_list_mutex);
+				starpu_data_request_list_push_front(src_node->data_requests_pending, r);
+				PTHREAD_MUTEX_UNLOCK(&src_node->data_requests_pending_list_mutex);
 			}
 		}
 	}
@@ -428,8 +389,8 @@ void _starpu_handle_all_pending_node_data_requests(starpu_memory_node src_node)
 int _starpu_check_that_no_data_request_exists(starpu_memory_node node)
 {
 	/* XXX lock that !!! that's a quick'n'dirty test */
-	int no_request = starpu_data_request_list_empty(data_requests[node]);
-	int no_pending = starpu_data_request_list_empty(data_requests_pending[node]);
+	int no_request = starpu_data_request_list_empty(node->data_requests);
+	int no_pending = starpu_data_request_list_empty(node->data_requests_pending);
 
 	return (no_request && no_pending);
 }

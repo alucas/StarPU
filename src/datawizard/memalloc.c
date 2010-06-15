@@ -17,16 +17,16 @@
 #include "memalloc.h"
 #include <datawizard/footprint.h>
 
-static pthread_rwlock_t mc_rwlock[STARPU_MAXNODES]; 
-static starpu_mem_chunk_list_t mc_list[STARPU_MAXNODES];
-static starpu_mem_chunk_list_t mc_list_to_free[STARPU_MAXNODES];
+static pthread_rwlock_t mc_rwlock[starpu_memory_nodes_count()]; 
+static starpu_mem_chunk_list_t mc_list[starpu_memory_nodes_count()];
+static starpu_mem_chunk_list_t mc_list_to_free[starpu_memory_nodes_count()];
 
 static size_t free_memory_on_node(starpu_mem_chunk_t mc, starpu_memory_node node);
 
 void _starpu_init_mem_chunk_lists(void)
 {
 	unsigned i;
-	for (i = 0; i < STARPU_MAXNODES; i++)
+	for (i = 0; i < starpu_memory_nodes_count(); i++)
 	{
 		pthread_rwlock_init(&mc_rwlock[i], NULL);
 		mc_list[i] = starpu_mem_chunk_list_new();
@@ -37,7 +37,7 @@ void _starpu_init_mem_chunk_lists(void)
 void _starpu_deinit_mem_chunk_lists(void)
 {
 	unsigned i;
-	for (i = 0; i < STARPU_MAXNODES; i++)
+	for (i = 0; i < starpu_memory_nodes_count(); i++)
 	{
 		starpu_mem_chunk_list_delete(mc_list[i]);
 		starpu_mem_chunk_list_delete(mc_list_to_free[i]);
@@ -157,7 +157,7 @@ static void transfer_subtree_to_node(starpu_data_handle handle, starpu_memory_no
 
 			/* count the number of copies */
 			cnt = 0;
-			for (i = 0; i < STARPU_MAXNODES; i++)
+			for (i = 0; i < starpu_memory_nodes_count(); i++)
 			{
 				if (handle->per_node[i].state == STARPU_SHARED) {
 					cnt++; 

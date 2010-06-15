@@ -81,6 +81,8 @@ struct starpu_model_list_t {
 //	struct starpu_history_entry_t entries[];
 //}
 
+void starpu_perfmodel_init();
+
 void _starpu_get_perf_model_dir(char *path, size_t maxlen);
 void _starpu_get_perf_model_dir_codelets(char *path, size_t maxlen);
 void _starpu_get_perf_model_dir_bus(char *path, size_t maxlen);

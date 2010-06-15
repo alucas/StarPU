@@ -57,7 +57,7 @@ void starpu_vertical_block_filter_func_csr(starpu_filter *f, starpu_data_handle 
 			starpu_data_get_child(root_handle, chunk);
 
 		starpu_memory_node node;
-		for (node = 0; node < STARPU_MAXNODES; node++)
+		for (node = 0; node < starpu_memory_nodes_count(); node++)
 		{
 			starpu_csr_interface_t *local = 
 				starpu_data_get_interface_on_node(chunk_handle, node);

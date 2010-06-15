@@ -19,7 +19,7 @@
 void _starpu_write_through_data(starpu_data_handle handle, starpu_memory_node requesting_node, 
 					   uint32_t write_through_mask)
 {
-	if ((write_through_mask & ~(1<<requesting_node)) == 0) {
+	if ((write_through_mask & ~(1<<requesting_node->id)) == 0) {
 		/* nothing will be done ... */
 		return;
 	}
@@ -28,10 +28,11 @@ void _starpu_write_through_data(starpu_data_handle handle, starpu_memory_node re
 		_starpu_datawizard_progress(requesting_node, 1);
 
 	/* first commit all changes onto the nodes specified by the mask */
-	starpu_memory_node node;
-	for (node = 0; node < STARPU_MAXNODES; node++)
+   unsigned int id;
+	for (id = 0; id < starpu_memory_nodes_count(); id++)
 	{
-		if (write_through_mask & (1<<node)) {
+      starpu_memory_node node = starpu_memory_nodes_get(id);
+		if (write_through_mask & (1<<node->id)) {
 			/* we need to commit the buffer on that node */
 			if (node != requesting_node) 
 			{
@@ -47,7 +48,7 @@ void _starpu_write_through_data(starpu_data_handle handle, starpu_memory_node re
 					/* there was no existing request so we create one now */
 					r = _starpu_create_data_request(handle, requesting_node,
 							node, handling_node, STARPU_R, 1);
-					_starpu_post_data_request(r, handling_node);
+					starpu_post_data_request(r, handling_node);
 				}
 				else {
 					/* if there is already a similar request, it is

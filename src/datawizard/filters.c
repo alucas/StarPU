@@ -132,15 +132,16 @@ void starpu_data_partition(starpu_data_handle initial_handle, starpu_filter *f)
 
 		children->sequential_consistency = initial_handle->sequential_consistency;
 
-		starpu_memory_node node;
-		for (node = 0; node < STARPU_MAXNODES; node++)
+      unsigned int id;
+		for (id = 0; id < starpu_memory_nodes_count(); id++)
 		{
-			children->per_node[node].state = 
-				initial_handle->per_node[node].state;
-			children->per_node[node].allocated = 
-				initial_handle->per_node[node].allocated;
-			children->per_node[node].automatically_allocated = initial_handle->per_node[node].automatically_allocated;
-			children->per_node[node].refcnt = 0;
+         starpu_memory_node node = starpu_memory_nodes_get(id);
+			children->per_node[node->id].state = 
+				initial_handle->per_node[node->id].state;
+			children->per_node[node->id].allocated = 
+				initial_handle->per_node[node->id].allocated;
+			children->per_node[node->id].automatically_allocated = initial_handle->per_node[node->id].automatically_allocated;
+			children->per_node[node->id].refcnt = 0;
 		}
 	}
 
@@ -151,7 +152,6 @@ void starpu_data_partition(starpu_data_handle initial_handle, starpu_filter *f)
 void starpu_data_unpartition(starpu_data_handle root_handle, starpu_memory_node gathering_node)
 {
 	unsigned child;
-	starpu_memory_node node;
 
 	_starpu_spin_lock(&root_handle->header_lock);
 
@@ -181,7 +181,7 @@ void starpu_data_unpartition(starpu_data_handle root_handle, starpu_memory_node 
 	 * for the gathering node, if we have some locally allocated data, we 
 	 * copy all the children (XXX this should not happen so we just do not
 	 * do anything since this is transparent ?) */
-	unsigned still_valid[STARPU_MAXNODES];
+	unsigned still_valid[starpu_memory_nodes_count()];
 
 	/* we do 2 passes : the first pass determines wether the data is still
 	 * valid or not, the second pass is needed to choose between STARPU_SHARED and
@@ -190,14 +190,16 @@ void starpu_data_unpartition(starpu_data_handle root_handle, starpu_memory_node 
 	unsigned nvalids = 0;
 
 	/* still valid ? */
-	for (node = 0; node < STARPU_MAXNODES; node++)
+   unsigned int id;
+	for (id = 0; id < starpu_memory_nodes_count(); id++)
 	{
+      starpu_memory_node node = starpu_memory_nodes_get(id);
 		/* until an issue is found the data is assumed to be valid */
 		unsigned isvalid = 1;
 
 		for (child = 0; child < root_handle->nchildren; child++)
 		{
-			starpu_local_data_state *local = &root_handle->children[child].per_node[node];
+			starpu_data_chunk local = &root_handle->children[child].per_node[node->id];
 
 			if (local->state == STARPU_INVALID) {
 				isvalid = 0; 
@@ -211,7 +213,7 @@ void starpu_data_unpartition(starpu_data_handle root_handle, starpu_memory_node 
 		}
 
 		/* no problem was found so the node still has a valid copy */
-		still_valid[node] = isvalid;
+		still_valid[node->id] = isvalid;
 		nvalids++;
 	}
 
@@ -220,10 +222,11 @@ void starpu_data_unpartition(starpu_data_handle root_handle, starpu_memory_node 
 
 	starpu_cache_state newstate = (nvalids == 1)?STARPU_OWNER:STARPU_SHARED;
 
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (id = 0; id < starpu_memory_nodes_count(); id++)
 	{
-		root_handle->per_node[node].state = 
-			still_valid[node]?newstate:STARPU_INVALID;
+      starpu_memory_node node = starpu_memory_nodes_get(id);
+		root_handle->per_node[node->id].state = 
+			still_valid[node->id]?newstate:STARPU_INVALID;
 	}
 
 	/* there is no child anymore */
@@ -241,7 +244,6 @@ void starpu_data_create_children(starpu_data_handle handle,
 	handle->children = calloc(nchildren, sizeof(struct starpu_data_state_t));
 	STARPU_ASSERT(handle->children);
 
-	starpu_memory_node node;
 	unsigned child;
 
 	for (child = 0; child < nchildren; child++)
@@ -252,10 +254,11 @@ void starpu_data_create_children(starpu_data_handle handle,
 
 		size_t interfacesize = children_interface_ops->interface_size;
 
-		for (node = 0; node < STARPU_MAXNODES; node++)
+      unsigned int id;
+		for (id = 0; id < starpu_memory_nodes_count(); id++)
 		{
-			handle_child->interface[node] = calloc(1, interfacesize);
-			STARPU_ASSERT(handle->children->interface[node]);
+         starpu_memory_node node = starpu_memory_nodes_get(id);
+			handle_child->per_node[node->id].interface = calloc(1, interfacesize);
 		}
 	}
 

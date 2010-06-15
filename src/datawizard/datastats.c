@@ -22,8 +22,8 @@
 /* measure the cache hit ratio for each node */
 
 #ifdef STARPU_DATA_STATS
-static unsigned hit_cnt[STARPU_MAXNODES];
-static unsigned miss_cnt[STARPU_MAXNODES];
+static unsigned hit_cnt[starpu_memory_nodes_count()];
+static unsigned miss_cnt[starpu_memory_nodes_count()];
 #endif
 
 inline void _starpu_msi_cache_hit(starpu_memory_node node __attribute__ ((unused)))
@@ -49,7 +49,7 @@ void _starpu_display_msi_stats(void)
 
 	fprintf(stderr, "MSI cache stats :\n");
 
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		total_hit_cnt += hit_cnt[node];
 		total_miss_cnt += miss_cnt[node];
@@ -57,7 +57,7 @@ void _starpu_display_msi_stats(void)
 
 	fprintf(stderr, "TOTAL MSI stats\thit %u (%2.2f \%%)\tmiss %u (%2.2f \%%)\n", total_hit_cnt, (100.0f*total_hit_cnt)/(total_hit_cnt+total_miss_cnt), total_miss_cnt, (100.0f*total_miss_cnt)/(total_hit_cnt+total_miss_cnt));
 
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		if (hit_cnt[node]+miss_cnt[node])
 		{
@@ -72,8 +72,8 @@ void _starpu_display_msi_stats(void)
 /* measure the efficiency of our allocation cache */
 
 #ifdef STARPU_DATA_STATS
-static unsigned alloc_cnt[STARPU_MAXNODES];
-static unsigned alloc_cache_hit_cnt[STARPU_MAXNODES];
+static unsigned alloc_cnt[starpu_memory_nodes_count()];
+static unsigned alloc_cache_hit_cnt[starpu_memory_nodes_count()];
 #endif
 
 inline void _starpu_allocation_cache_hit(starpu_memory_node node __attribute__ ((unused)))
@@ -95,7 +95,7 @@ void _starpu_display_alloc_cache_stats(void)
 #ifdef STARPU_DATA_STATS
 	fprintf(stderr, "Allocation cache stats:\n");
 	starpu_memory_node node;
-	for (node = 0; node < STARPU_MAXNODES; node++) 
+	for (node = 0; node < starpu_memory_nodes_count(); node++) 
 	{
 		if (alloc_cnt[node]) 
 		{
@@ -111,7 +111,7 @@ void _starpu_display_alloc_cache_stats(void)
 /* measure the amount of data transfers between each pair of nodes */
 #ifdef STARPU_DATA_STATS
 
-static size_t comm_ammount[STARPU_MAXNODES][STARPU_MAXNODES];
+static size_t comm_ammount[starpu_memory_nodes_count()][starpu_memory_nodes_count()];
 
 void _starpu_display_comm_amounts(void)
 {
@@ -119,16 +119,16 @@ void _starpu_display_comm_amounts(void)
 
 	unsigned long sum = 0;
 
-	for (dst = 0; dst < STARPU_MAXNODES; dst++)
-	for (src = 0; src < STARPU_MAXNODES; src++)
+	for (dst = 0; dst < starpu_memory_nodes_count(); dst++)
+	for (src = 0; src < starpu_memory_nodes_count(); src++)
 	{
 		sum += (unsigned long)comm_ammount[src][dst];
 	}
 
 	fprintf(stderr, "\nData transfers stats:\nTOTAL transfers %ld MB\n", sum/(1024*1024));
 
-	for (dst = 0; dst < STARPU_MAXNODES; dst++)
-	for (src = dst + 1; src < STARPU_MAXNODES; src++)
+	for (dst = 0; dst < starpu_memory_nodes_count(); dst++)
+	for (src = dst + 1; src < starpu_memory_nodes_count(); src++)
 	{
 		if (comm_ammount[src][dst])
 			fprintf(stderr, "\t%d <-> %d\t%ld MB\n\t\t%d -> %d\t%ld MB\n\t\t%d -> %d\t%ld MB\n",

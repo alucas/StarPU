@@ -47,8 +47,6 @@ static unsigned may_unlock_data_req_list_head(starpu_data_handle handle)
 	/* if there is no reference to the data anymore, we can use it */
 	if (handle->refcnt == 0)
 	{
-		STARPU_ASSERT(!handle->per_node[0].request);
-		STARPU_ASSERT(!handle->per_node[1].request);
 		return 1;
 	}
 

@@ -100,7 +100,7 @@ static struct starpu_data_interface_ops_t interface_variable_ops = {
 static void register_variable_handle(starpu_data_handle handle, starpu_memory_node home_node, void *interface)
 {
 	starpu_memory_node node;
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		starpu_variable_interface_t *local_interface = 
 			starpu_data_get_interface_on_node(handle, node);

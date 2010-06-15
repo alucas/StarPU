@@ -52,7 +52,7 @@ void starpu_canonical_block_filter_bcsr(starpu_filter *f __attribute__((unused))
 		uint32_t ptr_offset = c*r*chunk*elemsize;
 
 		starpu_memory_node node;
-		for (node = 0; node < STARPU_MAXNODES; node++)
+		for (node = 0; node < starpu_memory_nodes_count(); node++)
 		{
 			starpu_matrix_interface_t *local =
 				starpu_data_get_interface_on_node(sub_handle, node);

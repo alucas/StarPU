@@ -613,7 +613,7 @@ static void _starpu_init_workers_binding(struct starpu_machine_config_s *config)
 	unsigned worker;
 	for (worker = 0; worker < config->nworkers; worker++)
 	{
-		starpu_memory_node memory_node = -1;
+		starpu_memory_node memory_node = NULL;
 		unsigned is_a_set_of_accelerators = 0;
 		struct starpu_worker_s *workerarg = &config->workers[worker];
 

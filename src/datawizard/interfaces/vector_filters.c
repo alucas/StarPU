@@ -49,7 +49,7 @@ void starpu_block_filter_func_vector(starpu_filter *f, starpu_data_handle root_h
 			starpu_data_get_child(root_handle, chunk);
 
 		starpu_memory_node node;
-		for (node = 0; node < STARPU_MAXNODES; node++)
+		for (node = 0; node < starpu_memory_nodes_count(); node++)
 		{
 			starpu_vector_interface_t *local =
 				starpu_data_get_interface_on_node(chunk_handle, node);
@@ -89,7 +89,7 @@ void starpu_vector_divide_in_2_filter_func(starpu_filter *f, starpu_data_handle 
 		starpu_data_get_child(root_handle, 0);
 
 	starpu_memory_node node;
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		starpu_vector_interface_t *local =
 			starpu_data_get_interface_on_node(chunk0_handle, node);
@@ -110,7 +110,7 @@ void starpu_vector_divide_in_2_filter_func(starpu_filter *f, starpu_data_handle 
 	starpu_data_handle chunk1_handle =
 		starpu_data_get_child(root_handle, 1);
 
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		starpu_vector_interface_t *local =
 			starpu_data_get_interface_on_node(chunk1_handle, node);
@@ -154,7 +154,7 @@ void starpu_vector_list_filter_func(starpu_filter *f, starpu_data_handle root_ha
 		uint32_t chunk_size = length_tab[chunk];
 
 		starpu_memory_node node;
-		for (node = 0; node < STARPU_MAXNODES; node++)
+		for (node = 0; node < starpu_memory_nodes_count(); node++)
 		{
 			starpu_vector_interface_t *local =
 				starpu_data_get_interface_on_node(chunk_handle, node);

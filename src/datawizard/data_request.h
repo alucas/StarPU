@@ -29,7 +29,7 @@ struct callback_list {
 	struct callback_list *next;
 };
 
-LIST_TYPE(starpu_data_request,
+LIST_CREATE_TYPE(starpu_data_request,
 	starpu_spinlock_t lock;
 	unsigned refcnt;
 
@@ -47,9 +47,7 @@ LIST_TYPE(starpu_data_request,
 	int retval;
 
 	/* in case we have a chain of request (eg. for nvidia multi-GPU) */
-	struct starpu_data_request_s *next_req[STARPU_MAXNODES];
-	/* who should perform the next request ? */
-	unsigned next_req_count;
+	struct starpu_data_request_s *next_req;
 
 	struct callback_list *callbacks;
 
@@ -82,7 +80,7 @@ LIST_TYPE(starpu_data_requester,
 
 void _starpu_init_data_request_lists(void);
 void _starpu_deinit_data_request_lists(void);
-void _starpu_post_data_request(starpu_data_request_t r, starpu_memory_node handling_node);
+void starpu_post_data_request(starpu_data_request_t r, starpu_memory_node handling_node);
 void _starpu_handle_node_data_requests(starpu_memory_node src_node, unsigned may_alloc);
 
 void _starpu_handle_pending_node_data_requests(starpu_memory_node src_node);

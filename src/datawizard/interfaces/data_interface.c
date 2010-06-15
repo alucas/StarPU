@@ -58,7 +58,7 @@ static void _starpu_register_new_data(starpu_data_handle handle,
 	/* that new data is invalid from all nodes perpective except for the
 	 * home node */
 	starpu_memory_node node;
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		if (node == home_node) {
 			/* this is the home node with the only valid copy */
@@ -91,7 +91,7 @@ static starpu_data_handle _starpu_data_handle_allocate(struct starpu_data_interf
 	size_t interfacesize = interface_ops->interface_size;
 
 	starpu_memory_node node;
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		handle->interface[node] = calloc(1, interfacesize);
 		STARPU_ASSERT(handle->interface[node]);
@@ -123,7 +123,7 @@ void _starpu_register_data_handle(starpu_data_handle *handleptr, starpu_memory_n
 void starpu_data_free_interfaces(starpu_data_handle handle)
 {
 	starpu_memory_node node;
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 		free(handle->interface[node]);
 }
 
@@ -212,7 +212,7 @@ void starpu_data_unregister(starpu_data_handle handle)
 
 	/* Destroy the data now */
 	STARPU_ASSERT(handle);
-	for (node = 0; node < STARPU_MAXNODES; node++)
+	for (node = 0; node < starpu_memory_nodes_count(); node++)
 	{
 		starpu_local_data_state *local = &handle->per_node[node];
 

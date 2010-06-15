@@ -29,15 +29,12 @@ void _starpu_wake_all_blocked_workers_on_node(starpu_memory_node node)
 	/* wake up all queues on that node */
 	unsigned q_id;
 
-	starpu_mem_node_descr * const descr = _starpu_get_memory_node_description();
+   starpu_memory_nodes_readlock();
 
-	PTHREAD_RWLOCK_RDLOCK(&descr->attached_queues_rwlock);
-
-	unsigned nqueues = descr->queues_count[node];
-	for (q_id = 0; q_id < nqueues; q_id++)
+	for (q_id = 0; q_id < starpu_memory_node_queue_count(node); q_id++)
 	{
 		struct starpu_jobq_s *q;
-		q  = descr->attached_queues_per_node[node][q_id];
+		q  = starpu_memory_node_queue_get(node, q_id);
 
 		/* wake anybody waiting on that queue */
 		PTHREAD_MUTEX_LOCK(&q->activity_mutex);
@@ -45,7 +42,7 @@ void _starpu_wake_all_blocked_workers_on_node(starpu_memory_node node)
 		PTHREAD_MUTEX_UNLOCK(&q->activity_mutex);
 	}
 
-	PTHREAD_RWLOCK_UNLOCK(&descr->attached_queues_rwlock);
+   starpu_memory_nodes_unlock();
 }
 
 void starpu_wake_all_blocked_workers(void)
@@ -60,10 +57,10 @@ void starpu_wake_all_blocked_workers(void)
 	PTHREAD_MUTEX_UNLOCK(sched_mutex);
 
 	/* workers may be blocked on the various queues' conditions */
-	starpu_memory_node node;
-	unsigned nnodes = _starpu_get_memory_nodes_count();
-	for (node = 0; node < nnodes; node++)
+	unsigned int id;
+	for (id = 0; id < starpu_memory_nodes_count(); id++)
 	{
+      starpu_memory_node node = starpu_memory_nodes_get(id);
 		_starpu_wake_all_blocked_workers_on_node(node);
 	}
 }
@@ -83,14 +80,14 @@ static int copy_data_1_to_1_generic(starpu_data_handle handle, starpu_memory_nod
 
 	const struct starpu_copy_data_methods_s *copy_methods = handle->ops->copy_methods;
 
-	starpu_node_kind src_kind = _starpu_get_node_kind(src_node);
-	starpu_node_kind dst_kind = _starpu_get_node_kind(dst_node);
+	starpu_node_kind src_kind = starpu_memory_node_kind(src_node);
+	starpu_node_kind dst_kind = starpu_memory_node_kind(dst_node);
 
-	STARPU_ASSERT(handle->per_node[src_node].refcnt);
-	STARPU_ASSERT(handle->per_node[dst_node].refcnt);
+	STARPU_ASSERT(handle->per_node[src_node->id].refcnt);
+	STARPU_ASSERT(handle->per_node[dst_node->id].refcnt);
 
-	STARPU_ASSERT(handle->per_node[src_node].allocated);
-	STARPU_ASSERT(handle->per_node[dst_node].allocated);
+	STARPU_ASSERT(handle->per_node[src_node->id].allocated);
+	STARPU_ASSERT(handle->per_node[dst_node->id].allocated);
 
 #ifdef STARPU_USE_CUDA
 cudaError_t cures;
@@ -195,8 +192,8 @@ int __attribute__((warn_unused_result)) _starpu_driver_copy_data_1_to_1(starpu_d
 {
 	if (!donotread)
 	{
-		STARPU_ASSERT(handle->per_node[src_node].allocated);
-		STARPU_ASSERT(handle->per_node[src_node].refcnt);
+		STARPU_ASSERT(handle->per_node[src_node->id].allocated);
+		STARPU_ASSERT(handle->per_node[src_node->id].refcnt);
 	}
 
 	int ret_alloc, ret_copy;
@@ -207,8 +204,8 @@ int __attribute__((warn_unused_result)) _starpu_driver_copy_data_1_to_1(starpu_d
 	if (ret_alloc)
 		goto nomem;
 
-	STARPU_ASSERT(handle->per_node[dst_node].allocated);
-	STARPU_ASSERT(handle->per_node[dst_node].refcnt);
+	STARPU_ASSERT(handle->per_node[dst_node->id].allocated);
+	STARPU_ASSERT(handle->per_node[dst_node->id].refcnt);
 
 	/* if there is no need to actually read the data, 
 	 * we do not perform any transfer */
@@ -252,7 +249,7 @@ nomem:
 void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel __attribute__ ((unused)),
 					starpu_memory_node handling_node)
 {
-	starpu_node_kind kind = _starpu_get_node_kind(handling_node);
+	starpu_node_kind kind = starpu_memory_node_kind(handling_node);
 #ifdef STARPU_USE_CUDA
 	cudaEvent_t event;
 	cudaError_t cures;
@@ -293,7 +290,7 @@ void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel 
 unsigned _starpu_driver_test_request_completion(starpu_async_channel *async_channel __attribute__ ((unused)),
 					starpu_memory_node handling_node)
 {
-	starpu_node_kind kind = _starpu_get_node_kind(handling_node);
+	starpu_node_kind kind = starpu_memory_node_kind(handling_node);
 	unsigned success;
 #ifdef STARPU_USE_CUDA
 	cudaEvent_t event;

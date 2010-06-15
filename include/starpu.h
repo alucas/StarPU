@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-typedef uint8_t starpu_memory_node;
+typedef struct starpu_memory_node_t * starpu_memory_node;
 
 /* Maximum number of workers supported by StarPU, the actual number of worker
  * is given by the startpu_get_worker_count method */

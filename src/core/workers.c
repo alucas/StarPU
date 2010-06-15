@@ -20,6 +20,7 @@
 #include <common/utils.h>
 #include <core/workers.h>
 #include <core/debug.h>
+#include <core/perfmodel/perfmodel.h>
 #include <core/task.h>
 #include <profiling/profiling.h>
 
@@ -283,6 +284,8 @@ int starpu_init(struct starpu_conf *user_conf)
 
 	_starpu_timing_init();
 
+   starpu_perfmodel_init();
+
 	_starpu_load_bus_performance_files();
 
 	/* store the pointer to the user explicit configuration during the
@@ -404,17 +407,15 @@ typedef enum {
 static void _starpu_operate_on_all_queues_attached_to_node(starpu_memory_node node, queue_op op)
 {
 	unsigned q_id;
-	struct starpu_jobq_s *q;
+	starpu_job_queue q;
 
-	starpu_mem_node_descr * const descr = _starpu_get_memory_node_description();
+   starpu_memory_nodes_readlock();
 
-	PTHREAD_RWLOCK_RDLOCK(&descr->attached_queues_rwlock);
-
-	unsigned nqueues = descr->queues_count[node];
+	unsigned nqueues = starpu_memory_node_queue_count(node);
 
 	for (q_id = 0; q_id < nqueues; q_id++)
 	{
-		q  = descr->attached_queues_per_node[node][q_id];
+      q = starpu_memory_node_queue_get(node, q_id);
 		switch (op) {
 			case BROADCAST:
 				PTHREAD_COND_BROADCAST(&q->activity_cond);
@@ -428,7 +429,7 @@ static void _starpu_operate_on_all_queues_attached_to_node(starpu_memory_node no
 		}
 	}
 
-	PTHREAD_RWLOCK_UNLOCK(&descr->attached_queues_rwlock);
+   starpu_memory_nodes_unlock();
 }
 
 inline void _starpu_lock_all_queues_attached_to_node(starpu_memory_node node)
@@ -449,17 +450,15 @@ inline void _starpu_broadcast_all_queues_attached_to_node(starpu_memory_node nod
 static void _starpu_operate_on_all_queues(queue_op op)
 {
 	unsigned q_id;
-	struct starpu_jobq_s *q;
+	starpu_job_queue q;
 
-	starpu_mem_node_descr * const descr = _starpu_get_memory_node_description();
+   starpu_memory_nodes_readlock();
 
-	PTHREAD_RWLOCK_RDLOCK(&descr->attached_queues_rwlock);
-
-	unsigned nqueues = descr->total_queues_count;
+   unsigned int nqueues = starpu_memory_nodes_queue_count();
 
 	for (q_id = 0; q_id < nqueues; q_id++)
 	{
-		q  = descr->attached_queues_all[q_id];
+      q = starpu_memory_nodes_queue_get(q_id);
 		switch (op) {
 			case BROADCAST:
 				PTHREAD_COND_BROADCAST(&q->activity_cond);
@@ -473,7 +472,7 @@ static void _starpu_operate_on_all_queues(queue_op op)
 		}
 	}
 
-	PTHREAD_RWLOCK_UNLOCK(&descr->attached_queues_rwlock);
+   starpu_memory_nodes_unlock();
 }
 
 static void _starpu_kill_all_workers(struct starpu_machine_config_s *config)
