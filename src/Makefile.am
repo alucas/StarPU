@@ -94,7 +94,6 @@ noinst_HEADERS = 						\
 	common/utils.h						\
 	drivers/driver_common/driver_common.h			\
 	drivers/cpu/driver_cpu.h				\
-	drivers/cpu/driver_cpu_event.h				\
 	drivers/gordon/driver_gordon.h				\
 	drivers/gordon/gordon_interface.h			\
 	drivers/cuda/driver_cuda.h				\
@@ -181,8 +180,7 @@ libstarpu_la_SOURCES = 						\
 	profiling/bus_profiling_helpers.c
 
 if STARPU_USE_CPU
-libstarpu_la_SOURCES += drivers/cpu/driver_cpu.c \
-                        drivers/cpu/driver_cpu_event.c
+libstarpu_la_SOURCES += drivers/cpu/driver_cpu.c
 endif
 
 if STARPU_USE_CUDA
