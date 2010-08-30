@@ -65,14 +65,14 @@ int main(int argc, char **argv)
 		taskA->destroy = 0;
 		taskA->synchronous = 1;
 
-		ret = starpu_task_submit(taskA);
+		ret = starpu_task_submit(taskA, NULL);
 		STARPU_ASSERT(!ret);
 
 		starpu_task_declare_deps_array(taskB, 1, &taskA);
 
 		taskB->synchronous = 1;
 
-		ret = starpu_task_submit(taskB);
+		ret = starpu_task_submit(taskB, NULL);
 		STARPU_ASSERT(!ret);
 
 		starpu_task_destroy(taskA);

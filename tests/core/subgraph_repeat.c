@@ -69,10 +69,10 @@ static void callback_task_D(void *arg __attribute__((unused)))
 	}
 	else {
 		/* Let's go for another iteration */
-		starpu_task_submit(&taskA);
-		starpu_task_submit(&taskB);
-		starpu_task_submit(&taskC);
-		starpu_task_submit(&taskD);
+		starpu_task_submit(&taskA, NULL);
+		starpu_task_submit(&taskB, NULL);
+		starpu_task_submit(&taskC, NULL);
+		starpu_task_submit(&taskD, NULL);
 	}
 }
 
@@ -109,10 +109,10 @@ int main(int argc, char **argv)
 	struct starpu_task *depsD_array[2] = {&taskB, &taskC};
 	starpu_task_declare_deps_array(&taskD, 2, depsD_array);
 
-	starpu_task_submit(&taskA);
-	starpu_task_submit(&taskB);
-	starpu_task_submit(&taskC);
-	starpu_task_submit(&taskD);
+	starpu_task_submit(&taskA, NULL);
+	starpu_task_submit(&taskB, NULL);
+	starpu_task_submit(&taskC, NULL);
+	starpu_task_submit(&taskD, NULL);
 
 	/* Wait for the termination of all loops */
 	pthread_mutex_lock(&mutex);

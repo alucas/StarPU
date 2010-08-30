@@ -80,12 +80,12 @@ int main(int argc, char **argv)
 	taskF->tag_id = tagF;
 	starpu_tag_declare_deps(tagF, 1, tagD);
 
-	starpu_task_submit(taskA);
-	starpu_task_submit(taskB);
-	starpu_task_submit(taskC);
-	starpu_task_submit(taskD);
-	starpu_task_submit(taskE);
-	starpu_task_submit(taskF);
+	starpu_task_submit(taskA, NULL);
+	starpu_task_submit(taskB, NULL);
+	starpu_task_submit(taskC, NULL);
+	starpu_task_submit(taskD, NULL);
+	starpu_task_submit(taskE, NULL);
+	starpu_task_submit(taskF, NULL);
 
 	starpu_tag_t tag_array[2] = {tagE, tagF};
 	starpu_tag_wait_array(2, tag_array);

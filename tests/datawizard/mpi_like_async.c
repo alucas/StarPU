@@ -86,7 +86,7 @@ static void increment_handle_async(struct thread_data *thread_data)
 	task->detach = 1;
 	task->destroy = 1;
 
-	int ret = starpu_task_submit(task);
+	int ret = starpu_task_submit(task, NULL);
 	STARPU_ASSERT(!ret);
 }
 

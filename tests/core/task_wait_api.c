@@ -59,8 +59,8 @@ int main(int argc, char **argv)
 	/* B depends on A */
 	starpu_task_declare_deps_array(taskB, 1, &taskA);
 
-	starpu_task_submit(taskB);
-	starpu_task_submit(taskA);
+	starpu_task_submit(taskB, NULL);
+	starpu_task_submit(taskA, NULL);
 
 	starpu_task_wait(taskB);
 
@@ -77,11 +77,11 @@ int main(int argc, char **argv)
 	struct starpu_task *tasksCDEF[4] = {taskC, taskD, taskE, taskF};
 	starpu_task_declare_deps_array(taskG, 4, tasksCDEF);
 
-	starpu_task_submit(taskC);
-	starpu_task_submit(taskD);
-	starpu_task_submit(taskG);
-	starpu_task_submit(taskE);
-	starpu_task_submit(taskF);
+	starpu_task_submit(taskC, NULL);
+	starpu_task_submit(taskD, NULL);
+	starpu_task_submit(taskG, NULL);
+	starpu_task_submit(taskE, NULL);
+	starpu_task_submit(taskF, NULL);
 
 	starpu_task_wait(taskG);
 
@@ -101,11 +101,11 @@ int main(int argc, char **argv)
 	starpu_task_declare_deps_array(taskK, 2, tasksHI);
 	starpu_task_declare_deps_array(taskL, 2, tasksHI);
 
-	starpu_task_submit(taskH);
-	starpu_task_submit(taskI);
-	starpu_task_submit(taskJ);
-	starpu_task_submit(taskK);
-	starpu_task_submit(taskL);
+	starpu_task_submit(taskH, NULL);
+	starpu_task_submit(taskI, NULL);
+	starpu_task_submit(taskJ, NULL);
+	starpu_task_submit(taskK, NULL);
+	starpu_task_submit(taskL, NULL);
 
 	starpu_task_wait(taskJ);
 	starpu_task_wait(taskK);

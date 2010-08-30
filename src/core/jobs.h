@@ -55,6 +55,8 @@ typedef void (*callback)(void *);
 LIST_TYPE(starpu_job,
 	struct starpu_task *task;
 
+   starpu_event event;
+
 	pthread_mutex_t sync_mutex;
 	pthread_cond_t sync_cond;
 

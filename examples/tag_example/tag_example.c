@@ -103,7 +103,7 @@ static void create_task_grid(unsigned iter)
 		/* express deps : (i,j) depends on (i-1, j-1) & (i-1, j+1) */		
 		express_deps(i, j, iter);
 		
-		starpu_task_submit(task);
+		starpu_task_submit(task, NULL);
 	}
 
 	/* create entry tasks */
@@ -119,7 +119,7 @@ static void create_task_grid(unsigned iter)
 		/* this is an entry task */
 		task->tag_id = TAG(0, j, iter);
 
-		starpu_task_submit(task);
+		starpu_task_submit(task, NULL);
 	}
 
 }

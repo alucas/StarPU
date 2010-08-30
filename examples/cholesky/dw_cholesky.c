@@ -105,7 +105,7 @@ static void create_task_21(starpu_data_handle dataA, unsigned k, unsigned j)
 		starpu_tag_declare_deps(TAG21(k, j), 1, TAG11(k));
 	}
 
-	int ret = starpu_task_submit(task);
+	int ret = starpu_task_submit(task, NULL);
         if (STARPU_UNLIKELY(ret == -ENODEV)) {
                 fprintf(stderr, "No worker may execute this task\n");
                 exit(0);
@@ -152,7 +152,7 @@ static void create_task_22(starpu_data_handle dataA, unsigned k, unsigned i, uns
 		starpu_tag_declare_deps(TAG22(k, i, j), 2, TAG21(k, i), TAG21(k, j));
 	}
 
-	int ret = starpu_task_submit(task);
+	int ret = starpu_task_submit(task, NULL);
         if (STARPU_UNLIKELY(ret == -ENODEV)) {
                 fprintf(stderr, "No worker may execute this task\n");
                 exit(0);
@@ -186,7 +186,7 @@ static void _dw_cholesky(starpu_data_handle dataA, unsigned nblocks)
 			entry_task = task;
 		}
 		else {
-			int ret = starpu_task_submit(task);
+			int ret = starpu_task_submit(task, NULL);
                         if (STARPU_UNLIKELY(ret == -ENODEV)) {
                                 fprintf(stderr, "No worker may execute this task\n");
                                 exit(0);
@@ -207,7 +207,7 @@ static void _dw_cholesky(starpu_data_handle dataA, unsigned nblocks)
 	}
 
 	/* schedule the codelet */
-	int ret = starpu_task_submit(entry_task);
+	int ret = starpu_task_submit(entry_task, NULL);
         if (STARPU_UNLIKELY(ret == -ENODEV)) {
                 fprintf(stderr, "No worker may execute this task\n");
                 exit(0);
