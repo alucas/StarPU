@@ -136,7 +136,7 @@ int main(int argc, char **argv)
                 task->buffers[0].mode = STARPU_RW;
                 task->cl_arg = &multiplier;
 
-                ret = starpu_task_submit(task);
+                ret = starpu_task_submit(task, NULL);
                 if (ret) {
                         fprintf(stderr, "Error when submitting task\n");
                         exit(ret);

@@ -86,8 +86,8 @@ int main(int argc, char **argv)
 	/* B depends on A */
 	starpu_tag_declare_deps(tagB, 1, tagA);
 
-	starpu_task_submit(taskB);
-	starpu_task_submit(taskA);
+	starpu_task_submit(taskB, NULL);
+	starpu_task_submit(taskA, NULL);
 
 	starpu_tag_wait(tagB);
 	
@@ -104,11 +104,11 @@ int main(int argc, char **argv)
 	/* NB: we could have used starpu_tag_declare_deps_array instead */
 	starpu_tag_declare_deps(tagG, 4, tagC, tagD, tagE, tagF);
 
-	starpu_task_submit(taskC);
-	starpu_task_submit(taskD);
-	starpu_task_submit(taskG);
-	starpu_task_submit(taskE);
-	starpu_task_submit(taskF);
+	starpu_task_submit(taskC, NULL);
+	starpu_task_submit(taskD, NULL);
+	starpu_task_submit(taskG, NULL);
+	starpu_task_submit(taskE, NULL);
+	starpu_task_submit(taskF, NULL);
 
 	starpu_tag_wait(tagG);
 
@@ -128,11 +128,11 @@ int main(int argc, char **argv)
 
 	starpu_tag_t tagJKL[3] = {tagJ, tagK, tagL};
 
-	starpu_task_submit(taskH);
-	starpu_task_submit(taskI);
-	starpu_task_submit(taskJ);
-	starpu_task_submit(taskK);
-	starpu_task_submit(taskL);
+	starpu_task_submit(taskH, NULL);
+	starpu_task_submit(taskI, NULL);
+	starpu_task_submit(taskJ, NULL);
+	starpu_task_submit(taskK, NULL);
+	starpu_task_submit(taskL, NULL);
 
 	starpu_tag_wait_array(3, tagJKL);
 

@@ -85,7 +85,7 @@ static void inject_one_task(void)
 	task->callback_func = callback;
 	task->callback_arg = NULL;
 
-	starpu_task_submit(task);
+	starpu_task_submit(task, NULL);
 }
 
 static struct starpu_conf conf = {

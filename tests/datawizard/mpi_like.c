@@ -74,7 +74,7 @@ static void increment_handle(struct thread_data *thread_data)
 	task->destroy = 1;
 	task->detach = 0;
 
-	int ret = starpu_task_submit(task);
+	int ret = starpu_task_submit(task, NULL);
 	STARPU_ASSERT(!ret);
 
 	ret = starpu_task_wait(task);

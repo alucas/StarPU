@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 		task->callback_func = callback;
 		task->callback_arg = NULL;
 
-		int ret = starpu_task_submit(task);
+		int ret = starpu_task_submit(task, NULL);
 		if (ret == -ENODEV)
 			goto enodev;
 	}

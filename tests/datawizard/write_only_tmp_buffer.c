@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 		task->buffers[0].mode = STARPU_W;
 		task->detach = 0;
 
-	ret = starpu_task_submit(task);
+	ret = starpu_task_submit(task, NULL);
 	if (ret == -ENODEV)
 			goto enodev;
 
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 		task->buffers[0].mode = STARPU_R;
 		task->detach = 0;
 
-	ret = starpu_task_submit(task);
+	ret = starpu_task_submit(task, NULL);
 	if (ret == -ENODEV)
 			goto enodev;
 

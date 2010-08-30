@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 		task_f->buffers[1].handle = B_handle;
 		task_f->buffers[1].mode = STARPU_SCRATCH;
 
-		int ret = starpu_task_submit(task_f);
+		int ret = starpu_task_submit(task_f, NULL);
 		if (ret == -ENODEV)
 			goto enodev;
 	}
