@@ -24,28 +24,28 @@ typedef struct starpu_event_methods_t {
    /* Init an event */
    int (*init)(starpu_event);
 
-   /* Release an event */
-   int (*release)(starpu_event);
-
-   /* Get info */
-   int (*info)(starpu_event, starpu_event_info, void *);
-
    /* Wait for event completion */
    int (*wait)(starpu_event);
 
    /* Free */
    int (*free)(starpu_event);
 
+   /* Status */
+   starpu_event_status_t (*status)(starpu_event);
+
 } * starpu_event_methods;
 
 
 /* Create an event */
-int _starpu_event_create(starpu_event *, starpu_event_methods, void* data);
+starpu_event _starpu_event_create(starpu_event_methods, void* data);
 
 /* Lock an event */
 int _starpu_event_lock(starpu_event);
 
-/* Lock an event */
+/* Try to lock an event */
+int _starpu_event_trylock(starpu_event);
+
+/* Unock an event */
 int _starpu_event_unlock(starpu_event);
 
 /* Increment event private reference counter.
@@ -53,9 +53,10 @@ int _starpu_event_unlock(starpu_event);
  */
 int _starpu_event_retain_private(starpu_event);
 
-/* Decrement event private reference counter.
- */
+/* Decrement event private reference counter */
 int _starpu_event_release_private(starpu_event);
 
+/* Get event data */
+void * _starpu_event_data(starpu_event);
 
 #endif // __EVENT_H__
