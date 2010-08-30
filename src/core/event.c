@@ -127,10 +127,6 @@ starpu_event _starpu_event_create(starpu_event_methods methods, void *data) {
    if (err != 0)
       return NULL;
 
-   err = ev->methods->init(ev);
-   if (err != 0)
-      return NULL;
-
    return ev;
 }
 

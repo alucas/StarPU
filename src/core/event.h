@@ -21,9 +21,6 @@
 #include <starpu_event.h>
 
 typedef struct starpu_event_methods_t {
-   /* Init an event */
-   int (*init)(starpu_event);
-
    /* Wait for event completion */
    int (*wait)(starpu_event);
 
