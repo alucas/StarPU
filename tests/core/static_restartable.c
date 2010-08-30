@@ -73,8 +73,10 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < ntasks; i++)
 	{
-		starpu_task_submit(&task, NULL);
-		starpu_task_wait(&task);
+      starpu_event event;
+		starpu_task_submit(&task, &event);
+		starpu_event_wait(event);
+      starpu_event_release(event);
 	}
 
 	gettimeofday(&end, NULL);

@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <core/event.h>
+#include <core/errorcheck.h>
+#include <starpu_util.h>
 
 struct starpu_event_t {
    /* Public reference counter */
@@ -79,6 +81,9 @@ int starpu_event_retain(starpu_event event) {
 }
 
 int starpu_event_wait(starpu_event event) {
+	if (STARPU_UNLIKELY(!_starpu_worker_may_perform_blocking_calls()))
+		return -EDEADLK;
+
    if (!event->complete) {
       _starpu_event_lock(event);
       pthread_cond_wait(&event->cond, &event->mutex);
