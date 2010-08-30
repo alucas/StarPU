@@ -73,6 +73,7 @@ noinst_HEADERS = 						\
 	core/perfmodel/perfmodel.h				\
 	core/perfmodel/regression.h				\
 	core/jobs.h						\
+	core/trigger.h						\
 	core/task.h						\
 	core/workers.h						\
 	core/topology.h						\
@@ -120,6 +121,7 @@ libstarpu_la_SOURCES = 						\
 	common/fxt.c						\
 	common/utils.c						\
 	core/jobs.c						\
+	core/trigger.c						\
 	core/task.c						\
 	core/workers.c						\
 	core/topology.c						\
