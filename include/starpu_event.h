@@ -26,15 +26,16 @@ typedef struct starpu_event_t * starpu_event;
 int starpu_event_release(starpu_event event);
 int starpu_event_retain(starpu_event event);
 
-int starpu_events_wait(int num_events, starpu_event *events);
-
+int starpu_event_wait(starpu_event);
+int starpu_event_wait_all(int num_events, starpu_event *events);
 
 typedef enum {
-   STARPU_EVENT_EXECUTION_STATUS
-} starpu_event_info;
+   STARPU_EVENT_WAITING,
+   STARPU_EVENT_RUNNING,
+   STARPU_EVENT_COMPLETE
+} starpu_event_status_t;
 
-int starpu_event_info_get(starpu_event event, starpu_event_info info, void *ret);
-
+starpu_event_status_t starpu_event_status(starpu_event);
 
 #ifdef __cplusplus
 }
