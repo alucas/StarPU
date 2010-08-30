@@ -66,6 +66,7 @@ noinst_HEADERS = 						\
 	core/workers.h						\
 	core/topology.h						\
 	core/debug.h						\
+	core/event.h						\
 	core/errorcheck.h					\
 	sched_policies/fifo_queues.h				\
 	sched_policies/deque_queues.h				\
@@ -112,6 +113,7 @@ libstarpu_la_SOURCES = 						\
 	core/workers.c						\
 	core/topology.c						\
 	core/debug.c						\
+	core/event.c						\
 	core/errorcheck.c					\
 	core/progress_hook.c					\
 	core/dependencies/cg.c					\
