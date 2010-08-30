@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 		
 		tasks[i] = task;
 
-		int ret = starpu_task_submit(task);
+		int ret = starpu_task_submit(task, NULL);
 		if (STARPU_UNLIKELY(ret == -ENODEV))
 		{
 			fprintf(stderr, "No worker may execute this task\n");

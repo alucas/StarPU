@@ -55,7 +55,7 @@ void use_handle(starpu_data_handle handle)
 		task->buffers[0].mode = STARPU_RW;
 		task->detach = 0;
 
-	ret = starpu_task_submit(task);
+	ret = starpu_task_submit(task, NULL);
 	if (ret == -ENODEV)
 	{
 		/* No one can execute such a task, but that's not a failure

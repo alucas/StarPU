@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 		if (i > 0)
 		{
 			starpu_task_declare_deps_array(tasks[i], 1, &tasks[i-1]);
-			ret = starpu_task_submit(tasks[i]);
+			ret = starpu_task_submit(tasks[i], NULL);
 			STARPU_ASSERT(!ret);
 		}
 

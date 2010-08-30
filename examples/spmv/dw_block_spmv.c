@@ -234,7 +234,7 @@ void launch_spmv_codelets(void)
 			nchains++;
 		}
 
-		starpu_task_submit(&task_tab[task]);
+		starpu_task_submit(&task_tab[task], NULL);
 	}
 
 	printf("end of task submission (there was %d chains for %d tasks : ratio %d tasks per chain) !\n", nchains, totaltasks, totaltasks/nchains);

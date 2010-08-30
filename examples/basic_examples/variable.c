@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 		task->buffers[0].handle = float_array_handle;
 		task->buffers[0].mode = STARPU_RW;
 
-		ret = starpu_task_submit(task);
+		ret = starpu_task_submit(task, NULL);
 		if (STARPU_UNLIKELY(ret == -ENODEV))
 		{
 			fprintf(stderr, "No worker may execute this task\n");
