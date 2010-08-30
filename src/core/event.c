@@ -38,14 +38,85 @@ struct starpu_event_t {
 
 int _starpu_event_free(starpu_event);
 
-int _starpu_event_create(starpu_event * event, starpu_event_methods methods, void *data) {
+
+/******************/
+/* IMPLEMENTATION */
+/******************/
+
+/* PUBLIC */
+
+int starpu_event_release(starpu_event event) {
+   int ret;
+
+   _starpu_event_lock(event);
+
+   event->ref_count--;
+   ret = event->ref_count;
+
+   if (ret != 0 || event->ref_count_priv != 0)
+      _starpu_event_unlock(event);
+   else
+      _starpu_event_free(event);
+
+   return ret;
+}
+
+int starpu_event_retain(starpu_event event) {
+   int ret;
+
+   _starpu_event_lock(event);
+   
+   event->ref_count++;
+   ret = event->ref_count;
+
+   _starpu_event_unlock(event);
+
+   return ret;
+}
+
+int starpu_event_wait(starpu_event event) {
+   if (starpu_event_status(event) == STARPU_EVENT_COMPLETE)
+      return 0;
+   else
+      return event->methods->wait(event);
+}
+
+int starpu_event_wait_all(int num_events, starpu_event *events) {
+   int i;
+   for (i=0; i<num_events; i++) {
+      int err;
+
+      err = starpu_event_wait(events[i]);
+      if (err != 0)
+         return err;
+   }
+
+   return 0;
+}
+
+starpu_event_status_t starpu_event_status(starpu_event event) {
+   return event->methods->status(event);
+}
+
+/* PRIVATE */
+
+int _starpu_event_lock(starpu_event event) {
+   return pthread_mutex_lock(&event->mutex);
+}
+
+int _starpu_event_unlock(starpu_event event) {
+   return pthread_mutex_unlock(&event->mutex);
+}
+
+int _starpu_event_trylock(starpu_event event) {
+   return pthread_mutex_trylock(&event->mutex);
+}
+
+starpu_event _starpu_event_create(starpu_event_methods methods, void *data) {
    int err;
    starpu_event ev;
 
-   assert(event != NULL);
-
    ev = malloc(sizeof(struct starpu_event_t));
-   *event = ev;
 
    ev->ref_count = 0;
    ev->ref_count_priv = 1;
@@ -54,23 +125,24 @@ int _starpu_event_create(starpu_event * event, starpu_event_methods methods, voi
 
    err = pthread_mutex_init(&ev->mutex, NULL);
    if (err != 0)
-      return err;
+      return NULL;
 
    err = ev->methods->init(ev);
+   if (err != 0)
+      return NULL;
 
-   return err;
+   return ev;
 }
 
 int _starpu_event_retain_private(starpu_event event) {
    int ret;
 
-   pthread_mutex_lock(&event->mutex);
+   _starpu_event_lock(event);
    
    event->ref_count_priv++;
-
    ret = event->ref_count_priv;
 
-   pthread_mutex_unlock(&event->mutex);
+   _starpu_event_unlock(event);
 
    return ret;
 }
@@ -78,17 +150,22 @@ int _starpu_event_retain_private(starpu_event event) {
 int _starpu_event_release_private(starpu_event event) {
    int ret;
 
-   pthread_mutex_lock(&event->mutex);
+   _starpu_event_lock(event);
 
    event->ref_count_priv--;
    ret = event->ref_count_priv;
 
-   pthread_mutex_unlock(&event->mutex);
-
-   if (ret == 0 && event->ref_count == 0)
+   if (ret != 0 || event->ref_count != 0)
+      _starpu_event_unlock(event);
+   else
       _starpu_event_free(event);
 
    return ret;
+}
+
+/* Get event data */
+void * _starpu_event_data(starpu_event event) {
+   return event->data;
 }
 
 /* This method is called when both ref_count and ref_count_priv
@@ -98,4 +175,6 @@ int _starpu_event_free(starpu_event event) {
    event->methods->free(event);
 
    pthread_mutex_destroy(&event->mutex);
+
+   return 0;
 }
