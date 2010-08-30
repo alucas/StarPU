@@ -96,6 +96,7 @@ noinst_HEADERS = 						\
 	drivers/gordon/driver_gordon.h				\
 	drivers/gordon/gordon_interface.h			\
 	drivers/cuda/driver_cuda.h				\
+	drivers/cuda/driver_cuda_event.h				\
 	drivers/opencl/driver_opencl.h				\
 	drivers/opencl/driver_opencl_event.h				\
 	drivers/opencl/driver_opencl_utils.h			\
@@ -181,7 +182,8 @@ libstarpu_la_SOURCES += drivers/cpu/driver_cpu.c
 endif
 
 if STARPU_USE_CUDA
-libstarpu_la_SOURCES += drivers/cuda/driver_cuda.c
+libstarpu_la_SOURCES += drivers/cuda/driver_cuda.c \
+                        drivers/cuda/driver_cuda_event.c
 endif
 
 if STARPU_USE_GORDON
