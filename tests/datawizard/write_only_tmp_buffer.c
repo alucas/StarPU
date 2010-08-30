@@ -99,13 +99,17 @@ int main(int argc, char **argv)
 		task->buffers[0].mode = STARPU_W;
 		task->detach = 0;
 
-	ret = starpu_task_submit(task, NULL);
+   starpu_event event;
+
+	ret = starpu_task_submit(task, &event);
 	if (ret == -ENODEV)
 			goto enodev;
 
-	ret = starpu_task_wait(task);
+	ret = starpu_event_wait(event);
 	if (ret)
 		exit(-1);
+
+   starpu_event_release(event);
 
 	task = starpu_task_create();
 		task->cl = &display_cl;
@@ -113,13 +117,15 @@ int main(int argc, char **argv)
 		task->buffers[0].mode = STARPU_R;
 		task->detach = 0;
 
-	ret = starpu_task_submit(task, NULL);
+	ret = starpu_task_submit(task, &event);
 	if (ret == -ENODEV)
 			goto enodev;
 
-	ret = starpu_task_wait(task);
+	ret = starpu_event_wait(event);
 	if (ret)
 		exit(-1);
+
+   starpu_event_release(event);
 
 	/* this should get rid of automatically allocated buffers */
 	starpu_data_unregister(v_handle);

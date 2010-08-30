@@ -41,7 +41,7 @@ void starpu_execute_on_each_worker(void (*func)(void *), void *arg, uint32_t whe
 	int ret;
 	unsigned worker;
 	unsigned nworkers = starpu_worker_get_count();
-	struct starpu_task *tasks[STARPU_NMAXWORKERS];
+	starpu_event events[STARPU_NMAXWORKERS];
 
 	/* create a wrapper codelet */
 	struct starpu_codelet_t wrapper_cl = {
@@ -61,39 +61,39 @@ void starpu_execute_on_each_worker(void (*func)(void *), void *arg, uint32_t whe
 
 	for (worker = 0; worker < nworkers; worker++)
 	{
-		tasks[worker] = starpu_task_create();
+      struct starpu_task * task;
+		task = starpu_task_create();
 
-		tasks[worker]->cl = &wrapper_cl;
-		tasks[worker]->cl_arg = &args;
+		task->cl = &wrapper_cl;
+		task->cl_arg = &args;
 
-		tasks[worker]->execute_on_a_specific_worker = 1;
-		tasks[worker]->workerid = worker;
+		task->execute_on_a_specific_worker = 1;
+		task->workerid = worker;
 
-		tasks[worker]->detach = 0;
-		tasks[worker]->destroy = 0;
+		task->detach = 1;
+		task->destroy = 1;
 
 #ifdef STARPU_USE_FXT
-		_starpu_exclude_task_from_dag(tasks[worker]);
+		_starpu_exclude_task_from_dag(task);
 #endif
 
-		ret = starpu_task_submit(tasks[worker], NULL);
+		ret = starpu_task_submit(task, &events[worker]);
 		if (ret == -ENODEV)
 		{
 			/* if the worker is not able to execute this tasks, we
 			 * don't insist as this means the worker is not
 			 * designated by the "where" bitmap */
-			starpu_task_destroy(tasks[worker]);
-			tasks[worker] = NULL;
+			events[worker] = NULL;
 		}
 	}
 
 	for (worker = 0; worker < nworkers; worker++)
 	{
-		if (tasks[worker])
+		if (events[worker] != NULL)
 		{
-			ret = starpu_task_wait(tasks[worker]);
+			ret = starpu_event_wait(events[worker]);
 			STARPU_ASSERT(!ret);
-			starpu_task_destroy(tasks[worker]);
+         starpu_event_release(events[worker]);
 		}
 	}
 }

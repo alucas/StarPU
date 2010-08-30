@@ -209,7 +209,12 @@ int starpu_data_acquire(starpu_data_handle handle, starpu_access_mode mode)
 		wrapper.pre_sync_task->synchronous = 1;
 		int ret = starpu_task_submit(wrapper.pre_sync_task, NULL);
 		STARPU_ASSERT(!ret);
-		//starpu_task_wait(wrapper.pre_sync_task);
+		/* starpu_event event;
+         int ret = starpu_task_submit(wrapper.pre_sync_task, &event);
+		   STARPU_ASSERT(!ret);
+         starpu_event_wait(event);
+         starpu_event_release(event);
+      */
 	}
 	else {
 		PTHREAD_MUTEX_UNLOCK(&handle->sequential_consistency_mutex);

@@ -84,11 +84,14 @@ int main(int argc, char **argv)
 		task->detach = 0;
 		task->destroy = 0;
 		
-		int ret = starpu_task_submit(task, NULL);
+      starpu_event event;
+		int ret = starpu_task_submit(task, &event);
 		STARPU_ASSERT(!ret);
 
-		ret = starpu_task_wait(task);
+		ret = starpu_event_wait(event);
 		STARPU_ASSERT(!ret);
+
+      starpu_event_release(event);
 
 		starpu_task_destroy(task);
 	}
