@@ -29,11 +29,11 @@ int starpu_event_retain(starpu_event event);
 int starpu_events_wait(int num_events, starpu_event *events);
 
 
-enum starpu_event_info_t {
+typedef enum {
    STARPU_EVENT_EXECUTION_STATUS
-};
+} starpu_event_info;
 
-int starpu_event_info(starpu_event event, enum starpu_event_info_t param_name, void *ret);
+int starpu_event_info_get(starpu_event event, starpu_event_info info, void *ret);
 
 
 #ifdef __cplusplus
