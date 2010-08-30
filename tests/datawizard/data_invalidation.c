@@ -105,13 +105,16 @@ int main(int argc, char **argv)
 		memset_task->buffers[0].mode = STARPU_W;
 		memset_task->detach = 0;
 	
-		ret = starpu_task_submit(memset_task, NULL);
+      starpu_event event;
+		ret = starpu_task_submit(memset_task, &event);
 		if (ret == -ENODEV)
 				goto enodev;
 	
-		ret = starpu_task_wait(memset_task);
+		ret = starpu_event_wait(event);
 		if (ret)
 			exit(-1);
+
+      starpu_event_release(event);
 		
 		check_content_task = starpu_task_create();
 		check_content_task->cl = &check_content_cl;
@@ -119,13 +122,15 @@ int main(int argc, char **argv)
 		check_content_task->buffers[0].mode = STARPU_R;
 		check_content_task->detach = 0;
 	
-		ret = starpu_task_submit(check_content_task, NULL);
+		ret = starpu_task_submit(check_content_task, &event);
 		if (ret == -ENODEV)
 				goto enodev;
 	
-		ret = starpu_task_wait(check_content_task);
+		ret = starpu_event_wait(event);
 		if (ret)
 			exit(-1);
+
+      starpu_event_release(event);
 
 		starpu_data_invalidate(v_handle);
 	}

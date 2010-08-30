@@ -68,18 +68,26 @@ int main(int argc, char **argv)
 		/* we wait for the tasks explicitly */
 		taskB->detach = 0;
 
-		ret = starpu_task_submit(taskA, NULL);
+      starpu_event eventA, eventB;
+
+		ret = starpu_task_submit(taskA, &eventA);
 		STARPU_ASSERT(!ret);
 
 		starpu_task_declare_deps_array(taskB, 1, &taskA);
 
-		ret = starpu_task_submit(taskB, NULL);
+		ret = starpu_task_submit(taskB, &eventB);
 		STARPU_ASSERT(!ret);
 
-		ret = starpu_task_wait(taskB);
+		ret = starpu_event_wait(eventB);
 		STARPU_ASSERT(!ret);
 
-		ret = starpu_task_wait(taskA);
+      ret = starpu_event_release(eventB);
+		STARPU_ASSERT(!ret);
+
+		ret = starpu_event_wait(eventA);
+		STARPU_ASSERT(!ret);
+
+      ret = starpu_event_release(eventA);
 		STARPU_ASSERT(!ret);
 	}
 

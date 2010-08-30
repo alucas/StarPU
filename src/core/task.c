@@ -18,6 +18,7 @@
 #include <starpu_profiling.h>
 #include <core/workers.h>
 #include <core/jobs.h>
+#include <core/event.h>
 #include <core/task.h>
 #include <common/config.h>
 #include <common/utils.h>
@@ -131,28 +132,6 @@ void starpu_task_destroy(struct starpu_task *task)
 	
       free(task);
    }
-}
-
-int starpu_task_wait(struct starpu_task *task)
-{
-	STARPU_ASSERT(task);
-
-	if (task->detach || task->synchronous)
-		return -EINVAL;
-
-	if (STARPU_UNLIKELY(!_starpu_worker_may_perform_blocking_calls()))
-		return -EDEADLK;
-
-	starpu_job_t j = (struct starpu_job_s *)task->starpu_private;
-
-	_starpu_wait_job(j);
-
-	/* as this is a synchronous task, the liberation of the job
-	   structure was deferred */
-	if (task->destroy)
-		free(task);
-
-	return 0;
 }
 
 starpu_job_t _starpu_get_job_associated_to_task(struct starpu_task *task)
