@@ -28,6 +28,7 @@ typedef unsigned long uint32_t;
 typedef unsigned long long uint64_t;
 #endif
 
+#include <starpu_event.h>
 #include <starpu_config.h>
 #include <starpu_util.h>
 #include <starpu_data.h>
