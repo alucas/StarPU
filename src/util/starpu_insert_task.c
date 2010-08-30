@@ -158,7 +158,7 @@ void starpu_insert_task(starpu_codelet *cl, ...)
 	task->cl = cl;
 	task->cl_arg = arg_buffer;
 
-	int ret = starpu_task_submit(task);
+	int ret = starpu_task_submit(task, NULL);
 
 	if (STARPU_UNLIKELY(ret == -ENODEV))
 		fprintf(stderr, "No one can execute task %p wih cl %p (symbol %s)\n", task, task->cl, (task->cl->model && task->cl->model->symbol)?task->cl->model->symbol:"none");

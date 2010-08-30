@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 	task->synchronous = 1;
 	
 	/* submit the task to StarPU */
-	starpu_task_submit(task);
+	starpu_task_submit(task, NULL);
 	
 	/* terminate StarPU: statistics and other debug outputs are not
 	 * guaranteed to be generated unless this function is called. Once it

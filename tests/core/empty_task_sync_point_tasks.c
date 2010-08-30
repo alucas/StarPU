@@ -58,12 +58,12 @@ int main(int argc, char **argv)
 	starpu_task_declare_deps_array(taskE, 1, &taskD);
 	starpu_task_declare_deps_array(taskF, 1, &taskD);
 
-	starpu_task_submit(taskA);
-	starpu_task_submit(taskB);
-	starpu_task_submit(taskC);
-	starpu_task_submit(taskD);
-	starpu_task_submit(taskE);
-	starpu_task_submit(taskF);
+	starpu_task_submit(taskA, NULL);
+	starpu_task_submit(taskB, NULL);
+	starpu_task_submit(taskC, NULL);
+	starpu_task_submit(taskD, NULL);
+	starpu_task_submit(taskE, NULL);
+	starpu_task_submit(taskF, NULL);
 
 	starpu_task_wait_for_all();
 

@@ -674,19 +674,19 @@ STARPUFFT(start1dC2C)(STARPUFFT(plan) plan)
 	int z;
 
 	for (z=0; z < plan->totsize1; z++) {
-		starpu_task_submit(plan->twist1_tasks[z]);
-		starpu_task_submit(plan->fft1_tasks[z]);
+		starpu_task_submit(plan->twist1_tasks[z], NULL);
+		starpu_task_submit(plan->fft1_tasks[z], NULL);
 	}
 
-	starpu_task_submit(plan->join_task);
+	starpu_task_submit(plan->join_task, NULL);
 
 	for (z=0; z < plan->totsize3; z++) {
-		starpu_task_submit(plan->twist2_tasks[z]);
-		starpu_task_submit(plan->fft2_tasks[z]);
-		starpu_task_submit(plan->twist3_tasks[z]);
+		starpu_task_submit(plan->twist2_tasks[z], NULL);
+		starpu_task_submit(plan->fft2_tasks[z], NULL);
+		starpu_task_submit(plan->twist3_tasks[z], NULL);
 	}
 
-	starpu_task_submit(plan->end_task);
+	starpu_task_submit(plan->end_task, NULL);
 
 	return STEP_TAG_1D(plan, END, 0);
 }

@@ -246,7 +246,7 @@ static void launch_codelets(void)
 				starpu_data_get_sub_data(C_handle, 2, taskx, tasky);
 			task->buffers[2].mode = STARPU_RW;
 
-			starpu_task_submit(task);
+			starpu_task_submit(task, NULL);
 		}
 	}
 }

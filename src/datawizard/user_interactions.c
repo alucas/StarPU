@@ -147,7 +147,7 @@ int starpu_data_acquire_cb(starpu_data_handle handle,
 		PTHREAD_MUTEX_UNLOCK(&handle->sequential_consistency_mutex);
 
 		/* TODO detect if this is superflous */
-		int ret = starpu_task_submit(wrapper->pre_sync_task);
+		int ret = starpu_task_submit(wrapper->pre_sync_task, NULL);
 		STARPU_ASSERT(!ret);
 	}
 	else {
@@ -221,7 +221,7 @@ int starpu_data_acquire(starpu_data_handle handle, starpu_access_mode mode)
 
 		/* TODO detect if this is superflous */
 		wrapper.pre_sync_task->synchronous = 1;
-		int ret = starpu_task_submit(wrapper.pre_sync_task);
+		int ret = starpu_task_submit(wrapper.pre_sync_task, NULL);
 		STARPU_ASSERT(!ret);
 		//starpu_task_wait(wrapper.pre_sync_task);
 	}

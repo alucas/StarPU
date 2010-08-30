@@ -53,7 +53,7 @@ void *thread_func(void *arg __attribute__((unused)))
 		task->callback_func = NULL;
 		task->callback_arg = NULL;
 		
-		int ret = starpu_task_submit(task);
+		int ret = starpu_task_submit(task, NULL);
 		STARPU_ASSERT(!ret);
 	}
 

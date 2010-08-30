@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 		memset_task->buffers[0].mode = STARPU_W;
 		memset_task->detach = 0;
 	
-		ret = starpu_task_submit(memset_task);
+		ret = starpu_task_submit(memset_task, NULL);
 		if (ret == -ENODEV)
 				goto enodev;
 	
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 		check_content_task->buffers[0].mode = STARPU_R;
 		check_content_task->detach = 0;
 	
-		ret = starpu_task_submit(check_content_task);
+		ret = starpu_task_submit(check_content_task, NULL);
 		if (ret == -ENODEV)
 				goto enodev;
 	

@@ -15,6 +15,8 @@
  */
 
 #include <starpu.h>
+#include <starpu_event.h>
+#include <core/event.h>
 #include <core/jobs.h>
 #include <core/task.h>
 #include <core/workers.h>
@@ -60,6 +62,7 @@ starpu_job_t __attribute__((malloc)) _starpu_job_create(struct starpu_task *task
 	job = starpu_job_new();
 
 	job->task = task;
+   job->event = _starpu_event_create();
 
 	job->footprint_is_computed = 0;
 	job->submitted = 0;
@@ -123,6 +126,9 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 	/* in case there are dependencies, wake up the proper tasks */
 	j->submitted = 0;
 	_starpu_notify_dependencies(j);
+
+   _starpu_event_complete(j->event);
+   _starpu_event_release_private(j->event);
 
 	/* We must have set the j->terminated flag early, so that it is
 	 * possible to express task dependencies within the callback

@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 
 			task->synchronous = 1;
 
-			int ret = starpu_task_submit(task);
+			int ret = starpu_task_submit(task, NULL);
 			if (ret == -ENODEV)
 				goto enodev;
 		}

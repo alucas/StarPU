@@ -18,8 +18,9 @@
 #define __STARPU_TASK_H__
 
 #include <errno.h>
-#include <starpu.h>
 #include <starpu_config.h>
+#include <starpu_event.h>
+#include <starpu.h>
 
 #ifdef STARPU_USE_CUDA
 #include <cuda.h>
@@ -219,7 +220,7 @@ struct starpu_task *starpu_task_create(void);
  * structure (default behaviour). Calling this function on a statically
  * allocated task results in an undefined behaviour. */
 void starpu_task_destroy(struct starpu_task *task);
-int starpu_task_submit(struct starpu_task *task);
+int starpu_task_submit(struct starpu_task *task, starpu_event *event);
 
 /* This function blocks until the task was executed. It is not possible to
  * synchronize with a task more than once. It is not possible to wait

@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 	task->cl_arg_size = sizeof(factor);
 
 	/* execute the task on any eligible computational ressource */
-	starpu_task_submit(task);
+	starpu_task_submit(task, NULL);
 
 	/* StarPU does not need to manipulate the array anymore so we can stop
  	 * monitoring it */

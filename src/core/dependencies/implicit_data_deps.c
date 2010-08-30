@@ -328,7 +328,7 @@ void _starpu_unlock_post_sync_tasks(starpu_data_handle handle)
 			/* There is no need to depend on that task now, since it was already unlocked */
 			_starpu_release_data_enforce_sequential_consistency(link->task, handle);
 
-			int ret = starpu_task_submit(link->task);
+			int ret = starpu_task_submit(link->task, NULL);
 			STARPU_ASSERT(!ret);
 			link = link->next;
 		}
@@ -355,7 +355,7 @@ int _starpu_data_wait_until_available(starpu_data_handle handle, starpu_access_m
 		PTHREAD_MUTEX_UNLOCK(&handle->sequential_consistency_mutex);
 
 		/* TODO detect if this is superflous */
-		int ret = starpu_task_submit(sync_task);
+		int ret = starpu_task_submit(sync_task, NULL);
 		STARPU_ASSERT(!ret);
 		starpu_task_wait(sync_task);
 	}

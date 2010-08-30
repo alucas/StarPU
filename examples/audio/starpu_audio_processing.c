@@ -300,7 +300,7 @@ void create_starpu_task(unsigned iter)
 	task->callback_func = callback;
 	task->callback_arg = NULL;
 
-	starpu_task_submit(task);
+	starpu_task_submit(task, NULL);
 }
 
 static void init_problem(void)

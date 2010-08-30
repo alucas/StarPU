@@ -80,7 +80,7 @@ int main(int argc, char **argv)
                 task->cl_arg = &factor;
                 task->cl_arg_size = sizeof(factor);
 
-		starpu_task_submit(task);
+		starpu_task_submit(task, NULL);
 	}
 
 	starpu_data_unpartition(handle, 0);

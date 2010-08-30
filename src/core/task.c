@@ -184,7 +184,7 @@ int _starpu_submit_job(starpu_job_t j, unsigned do_not_increment_nsubmitted)
 }
 
 /* application should submit new tasks to StarPU through this function */
-int starpu_task_submit(struct starpu_task *task)
+int starpu_task_submit(struct starpu_task *task, starpu_event *event)
 {
 	int ret;
 	unsigned is_sync = task->synchronous;
@@ -247,6 +247,12 @@ int starpu_task_submit(struct starpu_task *task)
 	/* notify bound computation of a new task */
 	_starpu_bound_record(j);
 
+   if (event != NULL) {
+      *event = j->event;
+      starpu_event_retain(j->event);
+   }
+
+   _starpu_event_retain_private(j->event);
 	ret = _starpu_submit_job(j, 0);
 
 	if (is_sync)
