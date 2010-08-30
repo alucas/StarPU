@@ -67,10 +67,12 @@ int main(int argc, char **argv)
 		task->detach = 0;
 		task->destroy = 1;
 		
-		int ret = starpu_task_submit(task, NULL);
+      starpu_event event;
+		int ret = starpu_task_submit(task, &event);
 		STARPU_ASSERT(!ret);
 
-		starpu_task_wait(task);
+		starpu_event_wait(event);
+      starpu_event_release(event);
 	}
 
 	gettimeofday(&end, NULL);

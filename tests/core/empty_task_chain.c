@@ -21,6 +21,7 @@
 int main(int argc, char **argv)
 {
 	int i, ret;
+   starpu_event event;
 
 	starpu_init(NULL);
 
@@ -32,20 +33,24 @@ int main(int argc, char **argv)
 		tasks[i]->cl = NULL;
 
 		if (i > 0)
-		{
 			starpu_task_declare_deps_array(tasks[i], 1, &tasks[i-1]);
-			ret = starpu_task_submit(tasks[i], NULL);
-			STARPU_ASSERT(!ret);
-		}
 
-		if (i == (N-1))
+      if (i != (N-1)) {
+         ret = starpu_task_submit(tasks[i], NULL);
+      }
+      else {
 			tasks[i]->detach = 0;
+         ret = starpu_task_submit(tasks[i], &event);
+      }
+
+      STARPU_ASSERT(!ret);
 	}
 
-	ret = starpu_task_submit(tasks[0]);
+	ret = starpu_task_submit(tasks[0], NULL);
 	STARPU_ASSERT(!ret);
 
-	starpu_task_wait(tasks[N-1]);
+	starpu_event_wait(event);
+   starpu_event_release(event);
 
 	starpu_shutdown();
 

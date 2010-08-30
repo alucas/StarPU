@@ -59,10 +59,13 @@ int main(int argc, char **argv)
 	/* B depends on A */
 	starpu_task_declare_deps_array(taskB, 1, &taskA);
 
-	starpu_task_submit(taskB, NULL);
-	starpu_task_submit(taskA, NULL);
+   starpu_event eventA, eventB;
 
-	starpu_task_wait(taskB);
+	starpu_task_submit(taskB, &eventB);
+	starpu_task_submit(taskA, &eventA);
+
+	starpu_event_wait(eventB);
+   starpu_event_release(eventB);
 
 	fprintf(stderr, "{ C, D, E, F } -> { G }\n");
 
@@ -79,11 +82,13 @@ int main(int argc, char **argv)
 
 	starpu_task_submit(taskC, NULL);
 	starpu_task_submit(taskD, NULL);
-	starpu_task_submit(taskG, NULL);
+   starpu_event eventG;
+	starpu_task_submit(taskG, &eventG);
 	starpu_task_submit(taskE, NULL);
 	starpu_task_submit(taskF, NULL);
 
-	starpu_task_wait(taskG);
+	starpu_event_wait(eventG);
+   starpu_event_release(eventG);
 
 	fprintf(stderr, "{ H, I } -> { J, K, L }\n");
 	
@@ -101,15 +106,22 @@ int main(int argc, char **argv)
 	starpu_task_declare_deps_array(taskK, 2, tasksHI);
 	starpu_task_declare_deps_array(taskL, 2, tasksHI);
 
+   starpu_event eventJ, eventK, eventL;
+
 	starpu_task_submit(taskH, NULL);
 	starpu_task_submit(taskI, NULL);
-	starpu_task_submit(taskJ, NULL);
-	starpu_task_submit(taskK, NULL);
-	starpu_task_submit(taskL, NULL);
+	starpu_task_submit(taskJ, &eventJ);
+	starpu_task_submit(taskK, &eventK);
+	starpu_task_submit(taskL, &eventL);
 
-	starpu_task_wait(taskJ);
-	starpu_task_wait(taskK);
-	starpu_task_wait(taskL);
+	starpu_event_wait(eventJ);
+	starpu_event_wait(eventK);
+	starpu_event_wait(eventL);
+
+   starpu_event_release(eventJ);
+   starpu_event_release(eventK);
+   starpu_event_release(eventL);
+
 
 	starpu_shutdown();
 

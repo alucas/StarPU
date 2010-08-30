@@ -15,6 +15,7 @@
  */
 
 #include <starpu.h>
+#include <starpu_event.h>
 #include <common/config.h>
 #include <core/task.h>
 #include <datawizard/datawizard.h>
@@ -355,9 +356,11 @@ int _starpu_data_wait_until_available(starpu_data_handle handle, starpu_access_m
 		PTHREAD_MUTEX_UNLOCK(&handle->sequential_consistency_mutex);
 
 		/* TODO detect if this is superflous */
-		int ret = starpu_task_submit(sync_task, NULL);
+      starpu_event event;
+		int ret = starpu_task_submit(sync_task, &event);
 		STARPU_ASSERT(!ret);
-		starpu_task_wait(sync_task);
+      starpu_event_wait(event);
+      starpu_event_release(event);
 	}
 	else {
 		PTHREAD_MUTEX_UNLOCK(&handle->sequential_consistency_mutex);
