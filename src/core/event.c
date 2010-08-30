@@ -26,15 +26,19 @@ struct starpu_event_t {
    /* Private reference counter */
    int ref_count_priv;
 
-   /* Implementation specific data */
-   void * data;
+   /* Indicates if this event is complete */
+   int complete;
 
-   /* Associated mutex */
+   /* Mutex & Cond */
    pthread_mutex_t mutex;
+   pthread_cond_t cond;
 
-   /* Methods */
-   starpu_event_methods methods;
+   /* Associated triggers */
+   int trigger_count;
+   int trigger_size;
+   starpu_trigger * triggers;
 };
+
 
 int _starpu_event_free(starpu_event);
 
@@ -75,10 +79,13 @@ int starpu_event_retain(starpu_event event) {
 }
 
 int starpu_event_wait(starpu_event event) {
-   if (starpu_event_status(event) == STARPU_EVENT_COMPLETE)
-      return 0;
-   else
-      return event->methods->wait(event);
+   if (!event->complete) {
+      _starpu_event_lock(event);
+      pthread_cond_wait(&event->cond, &event->mutex);
+      _starpu_event_unlock(event);
+   }
+
+   return 0;
 }
 
 int starpu_event_wait_all(int num_events, starpu_event *events) {
@@ -94,8 +101,8 @@ int starpu_event_wait_all(int num_events, starpu_event *events) {
    return 0;
 }
 
-starpu_event_status_t starpu_event_status(starpu_event event) {
-   return event->methods->status(event);
+int starpu_event_test(starpu_event event) {
+   return event->complete;
 }
 
 /* PRIVATE */
@@ -112,7 +119,7 @@ int _starpu_event_trylock(starpu_event event) {
    return pthread_mutex_trylock(&event->mutex);
 }
 
-starpu_event _starpu_event_create(starpu_event_methods methods, void *data) {
+starpu_event _starpu_event_create() {
    int err;
    starpu_event ev;
 
@@ -120,10 +127,14 @@ starpu_event _starpu_event_create(starpu_event_methods methods, void *data) {
 
    ev->ref_count = 0;
    ev->ref_count_priv = 1;
-   ev->data = data;
-   ev->methods = methods;
+   ev->complete = 0;
+
+   ev->trigger_count = 0;
+   ev->trigger_size = 5;
+   ev->triggers = malloc(ev->trigger_size * sizeof(starpu_trigger));
 
    err = pthread_mutex_init(&ev->mutex, NULL);
+   err |= pthread_cond_init(&ev->cond, NULL);
    if (err != 0)
       return NULL;
 
@@ -159,18 +170,45 @@ int _starpu_event_release_private(starpu_event event) {
    return ret;
 }
 
-/* Get event data */
-void * _starpu_event_data(starpu_event event) {
-   return event->data;
+/* Trigger registering */
+int _starpu_event_trigger_register(starpu_event event, starpu_trigger trigger) {
+   _starpu_event_lock(event);
+
+   if (event->complete) {
+      /* we don't need to register because the event is complete */
+      _starpu_trigger_signal(trigger);
+   }
+   else {
+      /* Register trigger */
+      if (event->trigger_count == event->trigger_size) {
+         event->triggers = realloc(event->triggers, 2 * event->trigger_size * sizeof(starpu_trigger));
+      }
+      event->triggers[event->trigger_count] = trigger;
+      event->trigger_count += 1;
+   }
+
+   _starpu_event_unlock(event);
+
+   return 0;
+}
+
+void _starpu_event_complete(starpu_event event) {
+   int i;
+   for (i=0; i<event->trigger_count; i++) {
+      _starpu_trigger_signal(event->triggers[i]);
+   }
+
+   _starpu_event_release_private(event);
 }
 
 /* This method is called when both ref_count and ref_count_priv
  * are equal to 0.
  */
 int _starpu_event_free(starpu_event event) {
-   event->methods->free(event);
+   assert(event->complete);
 
    pthread_mutex_destroy(&event->mutex);
+   pthread_cond_destroy(&event->cond);
 
    return 0;
 }

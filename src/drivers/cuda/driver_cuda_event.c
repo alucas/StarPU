@@ -16,57 +16,44 @@
 
 #ifdef STARPU_USE_CUDA
 
+#include <core/event.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-static int _starpu_cuda_event_init(starpu_event);
-static int _starpu_cuda_event_wait(starpu_event);
-static int _starpu_cuda_event_free(starpu_event);
-static starpu_event_status_t _starpu_cuda_event_status(starpu_event);
-
-static struct starpu_event_methods_t methods = {
-   .wait = _starpu_cuda_event_wait,
-   .free = _starpu_cuda_event_free,
-   .status = _starpu_cuda_event_status
+struct arg_t {
+   cudaEvent_t cuda_event;
+   starpu_event event;
 };
 
+static void * cuda_event_thread(void *args) {
+   struct arg_t *arg = (struct arg_t*)args;
+
+	cudaError_t err = cudaEventSynchronize(arg->cuda_event);
+
+   if (STARPU_UNLIKELY(err))
+   	STARPU_CUDA_REPORT_ERROR(err);
+
+   _starpu_event_complete(arg->event);
+
+   err = cudaEventDestroy(arg->cuda_event);
+
+   if (STARPU_UNLIKELY(err))
+   	STARPU_CUDA_REPORT_ERROR(err);
+
+   free(arg);
+}
+
 starpu_event _starpu_cuda_event_create(cudaEvent_t event) {
-   return _starpu_event_create(&methods, event);
-}
+   struct arg_t * arg = malloc(sizeof(struct arg_t));
 
-static int _starpu_cuda_event_wait(starpu_event event) {
-   cudaEvent_t ev = (cudaEvent_t)_starpu_event_data(event);
-	cudaError_t err = cudaEventSynchronize(ev);
+   arg->event      = _starpu_event_create();
+   arg->cuda_event = event;
 
-   if (STARPU_UNLIKELY(err))
-   	STARPU_CUDA_REPORT_ERROR(err);
+   pthread_t thread;
+   pthread_create(&thread, NULL, cuda_event_thread, arg);
+   pthread_detach(thread);
 
-   return (err == cudaSuccess ? 0 : 1);
-}
-
-static int _starpu_cuda_event_free(starpu_event event) {
-   cudaEvent_t ev = (cudaEvent_t)_starpu_event_data(event);
-   cudaError_t err = cudaEventDestroy(ev);
-
-   if (STARPU_UNLIKELY(err))
-   	STARPU_CUDA_REPORT_ERROR(err);
-
-   return (err == cudaSuccess ? 0 : 1);
-}
-
-static starpu_event_status_t _starpu_cuda_event_status(starpu_event event) {
-   cl_event ev = (cudaEvent_t)_starpu_event_data(event);
-   cudaError_t status;
-
-   status = cudaEventQuery(ev);
-
-   switch (status) {
-      case cudaErrorInvalidValue:
-      case cudaErrorNotReady:
-         return STARPU_EVENT_WAITING;
-      case cudaSuccess:
-         return STARPU_EVENT_COMPLETE;
-   }
+   return arg->event;
 }
 
 #endif // STARPU_USE_CUDA
