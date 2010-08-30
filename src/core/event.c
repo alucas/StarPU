@@ -23,17 +23,19 @@
 
 struct starpu_event_t {
    /* Public reference counter */
-   int ref_count;
+   volatile int ref_count;
 
    /* Private reference counter */
-   int ref_count_priv;
+   volatile int ref_count_priv;
 
    /* Indicates if this event is complete */
-   int complete;
+   volatile int complete;
+
 
    /* Mutex & Cond */
    pthread_mutex_t mutex;
    pthread_cond_t cond;
+   volatile int cond_wait_count;
 
    /* Associated triggers */
    int trigger_count;
@@ -52,56 +54,53 @@ int _starpu_event_free(starpu_event);
 /* PUBLIC */
 
 int starpu_event_release(starpu_event event) {
-   int ret;
-
    _starpu_event_lock(event);
 
    event->ref_count--;
-   ret = event->ref_count;
 
-   if (ret != 0 || event->ref_count_priv != 0)
-      _starpu_event_unlock(event);
-   else
-      _starpu_event_free(event);
-
-   return ret;
-}
-
-int starpu_event_retain(starpu_event event) {
-   int ret;
-
-   _starpu_event_lock(event);
-   
-   event->ref_count++;
-   ret = event->ref_count;
+   int free = (event->ref_count == 0 && event->ref_count_priv == 0);
 
    _starpu_event_unlock(event);
 
-   return ret;
+   if (free)
+      _starpu_event_free(event);
+
+   return 0;
+}
+
+int starpu_event_retain(starpu_event event) {
+   _starpu_event_lock(event);
+   
+   event->ref_count++;
+
+   _starpu_event_unlock(event);
+
+   return 0;
 }
 
 int starpu_event_wait(starpu_event event) {
 	if (STARPU_UNLIKELY(!_starpu_worker_may_perform_blocking_calls()))
 		return -EDEADLK;
 
-   if (!event->complete) {
-      _starpu_event_lock(event);
+   _starpu_event_lock(event);
+   
+   event->cond_wait_count += 1;
+
+   while (!event->complete) {
       pthread_cond_wait(&event->cond, &event->mutex);
-      _starpu_event_unlock(event);
    }
+
+   event->cond_wait_count -= 1;
+
+   _starpu_event_unlock(event);
 
    return 0;
 }
 
 int starpu_event_wait_all(int num_events, starpu_event *events) {
    int i;
-   for (i=0; i<num_events; i++) {
-      int err;
-
-      err = starpu_event_wait(events[i]);
-      if (err != 0)
-         return err;
-   }
+   for (i=0; i<num_events; i++)
+      starpu_event_wait(events[i]);
 
    return 0;
 }
@@ -125,7 +124,6 @@ int _starpu_event_trylock(starpu_event event) {
 }
 
 starpu_event _starpu_event_create() {
-   int err;
    starpu_event ev;
 
    ev = malloc(sizeof(struct starpu_event_t));
@@ -138,41 +136,36 @@ starpu_event _starpu_event_create() {
    ev->trigger_size = 5;
    ev->triggers = malloc(ev->trigger_size * sizeof(starpu_trigger));
 
-   err = pthread_mutex_init(&ev->mutex, NULL);
-   err |= pthread_cond_init(&ev->cond, NULL);
-   if (err != 0)
-      return NULL;
+   pthread_mutex_init(&ev->mutex, NULL);
+   pthread_cond_init(&ev->cond, NULL);
+   ev->cond_wait_count = 0;
 
    return ev;
 }
 
 int _starpu_event_retain_private(starpu_event event) {
-   int ret;
-
    _starpu_event_lock(event);
    
    event->ref_count_priv++;
-   ret = event->ref_count_priv;
 
    _starpu_event_unlock(event);
 
-   return ret;
+   return 0;
 }
 
 int _starpu_event_release_private(starpu_event event) {
-   int ret;
-
    _starpu_event_lock(event);
 
    event->ref_count_priv--;
-   ret = event->ref_count_priv;
 
-   if (ret != 0 || event->ref_count != 0)
-      _starpu_event_unlock(event);
-   else
+   int free = (event->ref_count_priv == 0 && event->ref_count == 0);
+
+   _starpu_event_unlock(event);
+
+   if (free)
       _starpu_event_free(event);
 
-   return ret;
+   return 0;
 }
 
 /* Trigger registering */
@@ -198,6 +191,15 @@ int _starpu_event_trigger_register(starpu_event event, starpu_trigger trigger) {
 }
 
 void _starpu_event_complete(starpu_event event) {
+   _starpu_event_lock(event);
+
+   assert(!event->complete);
+   event->complete = 1;
+
+   pthread_cond_broadcast(&event->cond);
+
+   _starpu_event_unlock(event);
+
    int i;
    for (i=0; i<event->trigger_count; i++) {
       _starpu_trigger_signal(event->triggers[i]);
@@ -210,7 +212,9 @@ void _starpu_event_complete(starpu_event event) {
  * are equal to 0.
  */
 int _starpu_event_free(starpu_event event) {
-   assert(event->complete);
+   assert(event->complete && event->ref_count == 0 && event->ref_count_priv == 0);
+
+   while (event->cond_wait_count != 0);
 
    pthread_mutex_destroy(&event->mutex);
    pthread_cond_destroy(&event->cond);
