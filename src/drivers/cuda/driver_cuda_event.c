@@ -25,18 +25,13 @@ static int _starpu_cuda_event_free(starpu_event);
 static starpu_event_status_t _starpu_cuda_event_status(starpu_event);
 
 static struct starpu_event_methods_t methods = {
-   .init = _starpu_cuda_event_init,
    .wait = _starpu_cuda_event_wait,
    .free = _starpu_cuda_event_free,
    .status = _starpu_cuda_event_status
 };
 
 starpu_event _starpu_cuda_event_create(cudaEvent_t event) {
-   return _starpu_event_create(&event, &methods, event);
-}
-
-static int _starpu_cuda_event_init(starpu_event event) {
-   return 0;
+   return _starpu_event_create(&methods, event);
 }
 
 static int _starpu_cuda_event_wait(starpu_event event) {
