@@ -17,9 +17,15 @@
 #ifndef __TRIGGER_H__
 #define __TRIGGER_H__
 
+#include <starpu_event.h>
+
 typedef struct starpu_trigger_t * starpu_trigger;
 
-void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(starpu_trigger, void*), void *data);
+void _starpu_trigger_init(starpu_trigger trigger, int num_events, starpu_event *events, void (*callback)(starpu_trigger, void*), void *data, starpu_event *event);
+
+void _starpu_trigger_events_register(starpu_trigger, int num_events, starpu_event *events);
+
+void _starpu_trigger_enable(starpu_trigger trigger);
 
 void _starpu_trigger_signal(starpu_trigger trigger);
 

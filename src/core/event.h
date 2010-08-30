@@ -19,6 +19,7 @@
 
 #include <pthread.h>
 #include <starpu_event.h>
+#include <core/trigger.h>
 
 typedef struct starpu_event_methods_t {
    /* Wait for event completion */
@@ -26,15 +27,11 @@ typedef struct starpu_event_methods_t {
 
    /* Free */
    int (*free)(starpu_event);
-
-   /* Status */
-   starpu_event_status_t (*status)(starpu_event);
-
 } * starpu_event_methods;
 
 
 /* Create an event */
-starpu_event _starpu_event_create(starpu_event_methods, void* data);
+starpu_event _starpu_event_create();
 
 /* Lock an event */
 int _starpu_event_lock(starpu_event);
@@ -53,7 +50,10 @@ int _starpu_event_retain_private(starpu_event);
 /* Decrement event private reference counter */
 int _starpu_event_release_private(starpu_event);
 
-/* Get event data */
-void * _starpu_event_data(starpu_event);
+/* Trigger registering */
+int _starpu_event_trigger_register(starpu_event, starpu_trigger);
+
+/* Signal that the event occured */
+void _starpu_event_complete(starpu_event event);
 
 #endif // __EVENT_H__

@@ -29,14 +29,6 @@ int starpu_event_retain(starpu_event event);
 int starpu_event_wait(starpu_event);
 int starpu_event_wait_all(int num_events, starpu_event *events);
 
-typedef enum {
-   STARPU_EVENT_WAITING,
-   STARPU_EVENT_RUNNING,
-   STARPU_EVENT_COMPLETE
-} starpu_event_status_t;
-
-starpu_event_status_t starpu_event_status(starpu_event);
-
 #ifdef __cplusplus
 }
 #endif
