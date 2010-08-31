@@ -97,7 +97,6 @@ int main(int argc, char **argv)
 		task->cl = &cl;
 		task->buffers[0].handle = v_handle;
 		task->buffers[0].mode = STARPU_W;
-		task->detach = 0;
 
    starpu_event event;
 
@@ -115,7 +114,6 @@ int main(int argc, char **argv)
 		task->cl = &display_cl;
 		task->buffers[0].handle = v_handle;
 		task->buffers[0].mode = STARPU_R;
-		task->detach = 0;
 
 	ret = starpu_task_submit(task, &event);
 	if (ret == -ENODEV)

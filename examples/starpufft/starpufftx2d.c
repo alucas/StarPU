@@ -532,7 +532,6 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->cl_arg = &plan->fft1_args[z];
 		task->tag_id = STEP_TAG(TWIST1);
 		task->use_tag = 1;
-		task->detach = 1;
 		task->destroy = 0;
 
 		/* Tell that fft1 depends on twisted1 */
@@ -553,7 +552,6 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->cl_arg = &plan->fft1_args[z];
 		task->tag_id = STEP_TAG(FFT1);
 		task->use_tag = 1;
-		task->detach = 1;
 		task->destroy = 0;
 
 		/* Tell that to be done with first step we need to have
@@ -568,7 +566,6 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 	task->cl = NULL;
 	task->tag_id = STEP_TAG_2D(plan, JOIN, 0, 0);
 	task->use_tag = 1;
-	task->detach = 1;
 	task->destroy = 0;
 
 	/* Create second-round tasks */
@@ -600,7 +597,6 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->cl_arg = &plan->fft2_args[z];
 		task->tag_id = STEP_TAG(TWIST2);
 		task->use_tag = 1;
-		task->detach = 1;
 		task->destroy = 0;
 
 		/* Tell that fft2 depends on twisted2 */
@@ -617,7 +613,6 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->cl_arg = &plan->fft2_args[z];
 		task->tag_id = STEP_TAG(FFT2);
 		task->use_tag = 1;
-		task->detach = 1;
 		task->destroy = 0;
 
 		/* Tell that twist3 depends on fft2 */
@@ -632,7 +627,6 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->cl_arg = &plan->fft2_args[z];
 		task->tag_id = STEP_TAG(TWIST3);
 		task->use_tag = 1;
-		task->detach = 1;
 		task->destroy = 0;
 
 		/* Tell that to be completely finished we need to have finished this twisted3 */
@@ -646,7 +640,6 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 	task->cl = NULL;
 	task->tag_id = STEP_TAG_2D(plan, END, 0, 0);
 	task->use_tag = 1;
-	task->detach = 1;
 	task->destroy = 0;
 
 	return plan;

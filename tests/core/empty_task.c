@@ -64,7 +64,6 @@ int main(int argc, char **argv)
 
 		task->cl = NULL;
 
-		task->detach = 0;
 		task->destroy = 1;
 		
       starpu_event event;
