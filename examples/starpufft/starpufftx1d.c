@@ -518,7 +518,6 @@ STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 	/* Create first-round tasks: DIV_1D tasks of type twist1 and fft1 */
 	for (z = 0; z < plan->totsize1; z++) {
 		int i = z;
-#define STEP_TAG(step)	STEP_TAG_1D(plan, step, i)
 
 		plan->fft1_args[z].plan = plan;
 		plan->fft1_args[z].i = i;
@@ -542,13 +541,7 @@ STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 		task->buffers[1].handle = plan->twisted1_handle[z];
 		task->buffers[1].mode = STARPU_W;
 		task->cl_arg = &plan->fft1_args[z];
-		task->tag_id = STEP_TAG(TWIST1);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that fft1 depends on twisted1 */
-		starpu_tag_declare_deps(STEP_TAG(FFT1),
-				1, STEP_TAG(TWIST1));
 
 		/* Create FFT1 task */
 		plan->fft1_tasks[z] = task = starpu_task_create();
@@ -560,29 +553,20 @@ STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 		task->buffers[2].handle = plan->roots_handle[0];
 		task->buffers[2].mode = STARPU_R;
 		task->cl_arg = &plan->fft1_args[z];
-		task->tag_id = STEP_TAG(FFT1);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that the join task will depend on the fft1 task. */
-		starpu_tag_declare_deps(STEP_TAG_1D(plan, JOIN, 0),
-				1, STEP_TAG(FFT1));
-#undef STEP_TAG
 	}
 
 	/* Create the join task, only serving as a dependency point between
 	 * fft1 and twist2 tasks */
+   //FIXME: replace with event group
 	plan->join_task = task = starpu_task_create();
 	task->cl = NULL;
-	task->tag_id = STEP_TAG_1D(plan, JOIN, 0);
-	task->use_tag = 1;
 	task->destroy = 0;
 
 	/* Create second-round tasks: DIV_1D batches of n2/DIV_1D twist2, fft2,
 	 * and twist3 */
 	for (z = 0; z < plan->totsize3; z++) {
 		int jj = z;
-#define STEP_TAG(step)	STEP_TAG_1D(plan, step, jj)
 
 		plan->fft2_args[z].plan = plan;
 		plan->fft2_args[z].jj = jj;
@@ -596,23 +580,13 @@ STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 		 * the GPU. */
 		starpu_data_set_wt_mask(plan->fft2_handle[z], 1<<0);
 
-		/* Tell that twisted2 depends on the join task */
-		starpu_tag_declare_deps(STEP_TAG(TWIST2),
-				1, STEP_TAG_1D(plan, JOIN, 0));
-
 		/* Create twist2 task */
 		plan->twist2_tasks[z] = task = starpu_task_create();
 		task->cl = &STARPUFFT(twist2_1d_codelet);
 		task->buffers[0].handle = plan->twisted2_handle[z];
 		task->buffers[0].mode = STARPU_W;
 		task->cl_arg = &plan->fft2_args[z];
-		task->tag_id = STEP_TAG(TWIST2);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that fft2 depends on twisted2 */
-		starpu_tag_declare_deps(STEP_TAG(FFT2),
-				1, STEP_TAG(TWIST2));
 
 		/* Create FFT2 task */
 		plan->fft2_tasks[z] = task = starpu_task_create();
@@ -622,13 +596,7 @@ STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 		task->buffers[1].handle = plan->fft2_handle[z];
 		task->buffers[1].mode = STARPU_W;
 		task->cl_arg = &plan->fft2_args[z];
-		task->tag_id = STEP_TAG(FFT2);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that twist3 depends on fft2 */
-		starpu_tag_declare_deps(STEP_TAG(TWIST3),
-				1, STEP_TAG(FFT2));
 
 		/* Create twist3 tasks */
 		/* These run only on CPUs and thus write directly into the
@@ -638,71 +606,57 @@ STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 		task->buffers[0].handle = plan->fft2_handle[z];
 		task->buffers[0].mode = STARPU_R;
 		task->cl_arg = &plan->fft2_args[z];
-		task->tag_id = STEP_TAG(TWIST3);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that to be completely finished we need to have finished
-		 * this twisted3 */
-		starpu_tag_declare_deps(STEP_TAG_1D(plan, END, 0),
-				1, STEP_TAG(TWIST3));
-#undef STEP_TAG
 	}
 
 	/* Create end task, only serving as a join point. */
 	plan->end_task = task = starpu_task_create();
 	task->cl = NULL;
-	task->tag_id = STEP_TAG_1D(plan, END, 0);
-	task->use_tag = 1;
 	task->destroy = 0;
 
 	return plan;
 }
 
 /* Actually submit all the tasks. */
-static starpu_tag_t
+static starpu_event
 STARPUFFT(start1dC2C)(STARPUFFT(plan) plan)
 {
 	STARPU_ASSERT(plan->type == C2C);
 	int z;
 
 	for (z=0; z < plan->totsize1; z++) {
-		starpu_task_submit(plan->twist1_tasks[z], NULL);
-		starpu_task_submit(plan->fft1_tasks[z], NULL);
+      starpu_event twist1_event, fft1_event;
+		
+      starpu_task_submit(plan->twist1_tasks[z], &twist1_event);
+		starpu_task_submit_ex(plan->fft1_tasks[z], 1, &twist1_event, &fft1_event);
+
+      starpu_task_declare_deps_array(plan->join_task, 1, &fft1_event);
+
+      starpu_event_release(twist1_event);
+      starpu_event_release(fft1_event);
 	}
 
-	starpu_task_submit(plan->join_task, NULL);
+   starpu_event join_event;
+	starpu_task_submit(plan->join_task, &join_event);
 
 	for (z=0; z < plan->totsize3; z++) {
-		starpu_task_submit(plan->twist2_tasks[z], NULL);
-		starpu_task_submit(plan->fft2_tasks[z], NULL);
-		starpu_task_submit(plan->twist3_tasks[z], NULL);
+      starpu_event twist2_event, fft2_event, twist3_event;
+
+		starpu_task_submit_ex(plan->twist2_tasks[z], 1, &join_event, &twist2_event);
+		starpu_task_submit_ex(plan->fft2_tasks[z], 1, &twist2_event, &fft2_event);
+		starpu_task_submit_ex(plan->twist3_tasks[z], 1, &fft2_event, &twist3_event);
+
+      starpu_task_declare_deps_array(plan->end_task, 1, &twist3_event);
+
+      starpu_event_release(twist2_event);
+      starpu_event_release(fft2_event);
+      starpu_event_release(twist3_event);
 	}
 
-	starpu_task_submit(plan->end_task, NULL);
+   starpu_event_release(join_event);
 
-	return STEP_TAG_1D(plan, END, 0);
-}
+   starpu_event event;
+	starpu_task_submit(plan->end_task, &event);
 
-/* Free all the tags. The generic code handles freeing the buffers. */
-static void
-STARPUFFT(free_1d_tags)(STARPUFFT(plan) plan)
-{
-	unsigned i;
-	int n1 = plan->n1[0];
-
-	for (i = 0; i < n1; i++) {
-		starpu_tag_remove(STEP_TAG_1D(plan, TWIST1, i));
-		starpu_tag_remove(STEP_TAG_1D(plan, FFT1, i));
-	}
-
-	starpu_tag_remove(STEP_TAG_1D(plan, JOIN, 0));
-
-	for (i = 0; i < DIV_1D; i++) {
-		starpu_tag_remove(STEP_TAG_1D(plan, TWIST2, i));
-		starpu_tag_remove(STEP_TAG_1D(plan, FFT2, i));
-		starpu_tag_remove(STEP_TAG_1D(plan, TWIST3, i));
-	}
-
-	starpu_tag_remove(STEP_TAG_1D(plan, END, 0));
+	return event;
 }

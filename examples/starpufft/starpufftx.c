@@ -39,9 +39,6 @@ enum steps {
 #define STEP_BITS 3
 #define STEP_SHIFT (NUMBER_SHIFT - STEP_BITS)
 
-#define _STEP_TAG(plan, step, i) (((starpu_tag_t) plan->number << NUMBER_SHIFT) | ((starpu_tag_t)(step) << STEP_SHIFT) | (starpu_tag_t) (i))
-
-
 #define I_BITS STEP_SHIFT
 
 enum type {
@@ -157,10 +154,10 @@ compute_roots(STARPUFFT(plan) plan)
 #include "starpufftx1d.c"
 #include "starpufftx2d.c"
 
-starpu_tag_t
+starpu_event
 STARPUFFT(start)(STARPUFFT(plan) plan, void *_in, void *_out)
 {
-	starpu_tag_t tag;
+	starpu_event event;
 	int z;
 
 	plan->in = _in;
@@ -173,7 +170,7 @@ STARPUFFT(start)(STARPUFFT(plan) plan, void *_in, void *_out)
 				starpu_vector_data_register(&plan->in_handle, 0, (uintptr_t) plan->in, plan->totsize, sizeof(STARPUFFT(complex)));
 				for (z = 0; z < plan->totsize1; z++)
 					plan->twist1_tasks[z]->buffers[0].handle = plan->in_handle;
-				tag = STARPUFFT(start1dC2C)(plan);
+				event = STARPUFFT(start1dC2C)(plan);
 				break;
 			default:
 				STARPU_ABORT();
@@ -185,13 +182,13 @@ STARPUFFT(start)(STARPUFFT(plan) plan, void *_in, void *_out)
 			starpu_vector_data_register(&plan->in_handle, 0, (uintptr_t) plan->in, plan->totsize, sizeof(STARPUFFT(complex)));
 			for (z = 0; z < plan->totsize1; z++)
 				plan->twist1_tasks[z]->buffers[0].handle = plan->in_handle;
-			tag = STARPUFFT(start2dC2C)(plan);
+			event = STARPUFFT(start2dC2C)(plan);
 			break;
 		default:
 			STARPU_ABORT();
 			break;
 	}
-	return tag;
+	return event;
 }
 
 void
@@ -208,9 +205,10 @@ STARPUFFT(execute)(STARPUFFT(plan) plan, void *in, void *out)
 
 	gettimeofday(&start, NULL);
 
-	starpu_tag_t tag = STARPUFFT(start)(plan, in, out);
+	starpu_event event = STARPUFFT(start)(plan, in, out);
 	gettimeofday(&submit_tasks, NULL);
-	starpu_tag_wait(tag);
+	starpu_event_wait(event);
+   starpu_event_release(event);
 
 	STARPUFFT(cleanup)(plan);
 

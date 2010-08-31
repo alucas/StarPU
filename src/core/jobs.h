@@ -31,7 +31,6 @@
 #include <common/list.h>
 #include <common/fxt.h>
 #include <core/trigger.h>
-#include <core/dependencies/tags.h>
 #include <datawizard/datawizard.h>
 #include <core/perfmodel/perfmodel.h>
 #include <core/errorcheck.h>
@@ -67,8 +66,6 @@ LIST_TYPE(starpu_job,
 	struct starpu_buffer_descr_t ordered_buffers[STARPU_NMAXBUFS];
 	
 	starpu_mem_chunk_t scratch_memchunks[STARPU_NMAXBUFS];
-
-	struct starpu_tag_s *tag;
 
 	unsigned footprint_is_computed;
 	uint32_t footprint;

@@ -17,31 +17,16 @@
 #include "xlu.h"
 #include "xlu_kernels.h"
 
-#define TAG11(k)	((starpu_tag_t)( (1ULL<<60) | (unsigned long long)(k)))
-#define TAG12(k,i)	((starpu_tag_t)(((2ULL<<60) | (((unsigned long long)(k))<<32)	\
-					| (unsigned long long)(i))))
-#define TAG21(k,j)	((starpu_tag_t)(((3ULL<<60) | (((unsigned long long)(k))<<32)	\
-					| (unsigned long long)(j))))
-#define TAG22(k,i,j)	((starpu_tag_t)(((4ULL<<60) | ((unsigned long long)(k)<<32) 	\
-					| ((unsigned long long)(i)<<16)	\
-					| (unsigned long long)(j))))
-
 static unsigned no_prio = 0;
-
-
-
 
 /*
  *	Construct the DAG
  */
 
-static struct starpu_task *create_task(starpu_tag_t id)
+static struct starpu_task *create_task()
 {
 	struct starpu_task *task = starpu_task_create();
 		task->cl_arg = NULL;
-
-	task->use_tag = 1;
-	task->tag_id = id;
 
 	return task;
 }
@@ -62,15 +47,10 @@ static struct starpu_task *create_task_11(starpu_data_handle dataA, unsigned k)
 	if (!no_prio)
 		task->priority = STARPU_MAX_PRIO;
 
-	/* enforce dependencies ... */
-	if (k > 0) {
-		starpu_tag_declare_deps(TAG11(k), 1, TAG22(k-1, k, k));
-	}
-
 	return task;
 }
 
-static void create_task_12(starpu_data_handle dataA, unsigned k, unsigned j)
+static struct starpu_task * create_task_12(starpu_data_handle dataA, unsigned k, unsigned j)
 {
 //	printf("task 12 k,i = %d,%d TAG = %llx\n", k,i, TAG12(k,i));
 
@@ -88,18 +68,10 @@ static void create_task_12(starpu_data_handle dataA, unsigned k, unsigned j)
 		task->priority = STARPU_MAX_PRIO;
 	}
 
-	/* enforce dependencies ... */
-	if (k > 0) {
-		starpu_tag_declare_deps(TAG12(k, j), 2, TAG11(k), TAG22(k-1, k, j));
-	}
-	else {
-		starpu_tag_declare_deps(TAG12(k, j), 1, TAG11(k));
-	}
-
-	starpu_task_submit(task, NULL);
+   return task;
 }
 
-static void create_task_21(starpu_data_handle dataA, unsigned k, unsigned i)
+static struct starpu_task * create_task_21(starpu_data_handle dataA, unsigned k, unsigned i)
 {
 	struct starpu_task *task = create_task(TAG21(k, i));
 
@@ -115,18 +87,10 @@ static void create_task_21(starpu_data_handle dataA, unsigned k, unsigned i)
 		task->priority = STARPU_MAX_PRIO;
 	}
 
-	/* enforce dependencies ... */
-	if (k > 0) {
-		starpu_tag_declare_deps(TAG21(k, i), 2, TAG11(k), TAG22(k-1, i, k));
-	}
-	else {
-		starpu_tag_declare_deps(TAG21(k, i), 1, TAG11(k));
-	}
-
-	starpu_task_submit(task, NULL);
+   return task;
 }
 
-static void create_task_22(starpu_data_handle dataA, unsigned k, unsigned i, unsigned j)
+static struct starpu_task * create_task_22(starpu_data_handle dataA, unsigned k, unsigned i, unsigned j)
 {
 //	printf("task 22 k,i,j = %d,%d,%d TAG = %llx\n", k,i,j, TAG22(k,i,j));
 
@@ -146,15 +110,7 @@ static void create_task_22(starpu_data_handle dataA, unsigned k, unsigned i, uns
 		task->priority = STARPU_MAX_PRIO;
 	}
 
-	/* enforce dependencies ... */
-	if (k > 0) {
-		starpu_tag_declare_deps(TAG22(k, i, j), 3, TAG22(k-1, i, j), TAG12(k, j), TAG21(k, i));
-	}
-	else {
-		starpu_tag_declare_deps(TAG22(k, i, j), 2, TAG12(k, j), TAG21(k, i));
-	}
-
-	starpu_task_submit(task, NULL);
+	return task;
 }
 
 /*
@@ -166,53 +122,83 @@ static void dw_codelet_facto_v3(starpu_data_handle dataA, unsigned nblocks)
 	struct timeval start;
 	struct timeval end;
 
-	struct starpu_task *entry_task = NULL;
 
 	/* create all the DAG nodes */
 	unsigned i,j,k;
 
+   starpu_event first_event = starpu_event_create();
+   starpu_event *events = malloc(sizeof(starpu_event) * nblocks *nblocks);
+   #define EVENT(x,y) events[x*nblocks+y]
+   EVENT(0,0) = first_event;
+   starpu_event_retain(first_event);
+
 	for (k = 0; k < nblocks; k++)
 	{
-		struct starpu_task *task = create_task_11(dataA, k);
+		struct starpu_task *task11 = create_task_11(dataA, k);
 
-		/* we defer the launch of the first task */
-		if (k == 0) {
-			entry_task = task;
-		}
-		else {
-			starpu_task_submit(task, NULL);
-		}
+      starpu_event old = EVENT(k,k);
+      starpu_task_submit_ex(task11, 1, &old, &EVENT(k,k));
+      starpu_event_release(old);
 		
-		for (i = k+1; i<nblocks; i++)
+		for (j = k+1; j<nblocks; j++)
 		{
-			create_task_12(dataA, k, i);
-			create_task_21(dataA, k, i);
-		}
+			struct starpu_task *task21 = create_task_21(dataA, k, j);
+         if (k > 0) {
+            starpu_event old = EVENT(k,j);
+            starpu_event deps[] = {EVENT(k,k), old};
+            starpu_task_submit_ex(task21, 2, deps, &EVENT(k,j));
+            starpu_event_release(old);
+         }
+         else
+            starpu_task_submit_ex(task21, 1, &EVENT(k,k), &EVENT(k,j));
 
-		for (i = k+1; i<nblocks; i++)
-		{
-			for (j = k+1; j<nblocks; j++)
-			{
-				create_task_22(dataA, k, i, j);
+			struct starpu_task *task12 = create_task_12(dataA, k, j);
+         if (k > 0) {
+            starpu_event old = EVENT(j,k);
+            starpu_event deps[] = {EVENT(k,k), old};
+            starpu_task_submit_ex(task12, 2, deps, &EVENT(j,k));
+            starpu_event_release(old);
+         }
+         else
+            starpu_task_submit_ex(task12, 1, &EVENT(k,k), &EVENT(j,k));
+      }
+
+      for (i = k+1; i<nblocks; i++) {
+         for (j = k+1; j<nblocks; j++) {
+            struct starpu_task *task22 = create_task_22(dataA, k, i, j);
+            if (k > 0) {
+               starpu_event old = EVENT(i,j);
+               starpu_event deps[] = {EVENT(i,k), EVENT(k,j), old};
+               starpu_task_submit_ex(task22, 3, deps, &EVENT(i,j));
+               starpu_event_release(old);
+            }
+            else {
+               starpu_event deps[] = {EVENT(i,k), EVENT(k,j)};
+               starpu_task_submit_ex(task22, 2, deps, &EVENT(i,j));
+            }
 			}
-		}
+      }
 	}
+
+   starpu_event last_event = EVENT(nblocks-1, nblocks-1);
+   starpu_event_retain(last_event);
+
+   for (i=0; i<nblocks; i++)
+      for (j=0; j<nblocks; j++)
+         starpu_event_release(EVENT(j,i));
+
+   free(events);
 
 	/* schedule the codelet */
 	gettimeofday(&start, NULL);
-	int ret = starpu_task_submit(entry_task, NULL);
-	if (STARPU_UNLIKELY(ret == -ENODEV))
-	{
-		fprintf(stderr, "No worker may execute this task\n");
-		exit(-1);
-	}
-
-
+   starpu_event_trigger(first_event);
 
 	/* stall the application until the end of computations */
-	starpu_tag_wait(TAG11(nblocks-1));
-
+	starpu_event_wait(last_event);
 	gettimeofday(&end, NULL);
+
+   starpu_event_release(first_event);
+   starpu_event_release(last_event);
 
 	double timing = (double)((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec));
 	fprintf(stderr, "Computation took (in ms)\n");
