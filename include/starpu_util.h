@@ -154,11 +154,6 @@ void starpu_helper_cublas_shutdown(void);
  * */
 void starpu_execute_on_each_worker(void (*func)(void *), void *arg, uint32_t where);
 
-/* This creates (and submits) an empty task that unlocks a tag once all its
- * dependencies are fulfilled. */
-void starpu_create_sync_task(starpu_tag_t sync_tag, unsigned ndeps, starpu_tag_t *deps,
-				void (*callback)(void *), void *callback_arg);
-
 /* Constants used by the starpu_insert_task helper to determine the different types of argument */
 #define STARPU_VALUE		(1<<3)	/* Pointer to a constant value */
 #define STARPU_CALLBACK		(1<<4)	/* Callback function */

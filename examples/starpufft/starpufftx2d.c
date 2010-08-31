@@ -509,7 +509,6 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 	/* Create first-round tasks */
 	for (z = 0; z < plan->totsize1; z++) {
 		int i = z / m1, j = z % m1;
-#define STEP_TAG(step)	STEP_TAG_2D(plan, step, i, j)
 
 		plan->fft1_args[z].plan = plan;
 		plan->fft1_args[z].i = i;
@@ -530,13 +529,7 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->buffers[1].handle = plan->twisted1_handle[z];
 		task->buffers[1].mode = STARPU_W;
 		task->cl_arg = &plan->fft1_args[z];
-		task->tag_id = STEP_TAG(TWIST1);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that fft1 depends on twisted1 */
-		starpu_tag_declare_deps(STEP_TAG(FFT1),
-				1, STEP_TAG(TWIST1));
 
 		/* Create FFT1 task */
 		plan->fft1_tasks[z] = task = starpu_task_create();
@@ -550,28 +543,17 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->buffers[3].handle = plan->roots_handle[1];
 		task->buffers[3].mode = STARPU_R;
 		task->cl_arg = &plan->fft1_args[z];
-		task->tag_id = STEP_TAG(FFT1);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that to be done with first step we need to have
-		 * finished this fft1 */
-		starpu_tag_declare_deps(STEP_TAG_2D(plan, JOIN, 0, 0),
-				1, STEP_TAG(FFT1));
-#undef STEP_TAG
 	}
 
 	/* Create join task */
 	plan->join_task = task = starpu_task_create();
 	task->cl = NULL;
-	task->tag_id = STEP_TAG_2D(plan, JOIN, 0, 0);
-	task->use_tag = 1;
 	task->destroy = 0;
 
 	/* Create second-round tasks */
 	for (z = 0; z < plan->totsize3; z++) {
 		int kk = z / DIV_2D_M, ll = z % DIV_2D_M;
-#define STEP_TAG(step)	STEP_TAG_2D(plan, step, kk, ll)
 
 		plan->fft2_args[z].plan = plan;
 		plan->fft2_args[z].kk = kk;
@@ -584,24 +566,13 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		/* We'll need it on the CPU for the last twist anyway */
 		starpu_data_set_wt_mask(plan->fft2_handle[z], 1<<0);
 
-		/* Tell that twisted2 depends on the whole first step to be
-		 * done */
-		starpu_tag_declare_deps(STEP_TAG(TWIST2),
-				1, STEP_TAG_2D(plan, JOIN, 0, 0));
-
 		/* Create twist2 task */
 		plan->twist2_tasks[z] = task = starpu_task_create();
 		task->cl = &STARPUFFT(twist2_2d_codelet);
 		task->buffers[0].handle = plan->twisted2_handle[z];
 		task->buffers[0].mode = STARPU_W;
 		task->cl_arg = &plan->fft2_args[z];
-		task->tag_id = STEP_TAG(TWIST2);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that fft2 depends on twisted2 */
-		starpu_tag_declare_deps(STEP_TAG(FFT2),
-				1, STEP_TAG(TWIST2));
 
 		/* Create FFT2 task */
 		plan->fft2_tasks[z] = task = starpu_task_create();
@@ -611,13 +582,7 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->buffers[1].handle = plan->fft2_handle[z];
 		task->buffers[1].mode = STARPU_W;
 		task->cl_arg = &plan->fft2_args[z];
-		task->tag_id = STEP_TAG(FFT2);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that twist3 depends on fft2 */
-		starpu_tag_declare_deps(STEP_TAG(TWIST3),
-				1, STEP_TAG(FFT2));
 
 		/* Create twist3 tasks */
 		plan->twist3_tasks[z] = task = starpu_task_create();
@@ -625,73 +590,56 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 		task->buffers[0].handle = plan->fft2_handle[z];
 		task->buffers[0].mode = STARPU_R;
 		task->cl_arg = &plan->fft2_args[z];
-		task->tag_id = STEP_TAG(TWIST3);
-		task->use_tag = 1;
 		task->destroy = 0;
-
-		/* Tell that to be completely finished we need to have finished this twisted3 */
-		starpu_tag_declare_deps(STEP_TAG_2D(plan, END, 0, 0),
-				1, STEP_TAG(TWIST3));
-#undef STEP_TAG
 	}
 
 	/* Create end task */
 	plan->end_task = task = starpu_task_create();
 	task->cl = NULL;
-	task->tag_id = STEP_TAG_2D(plan, END, 0, 0);
-	task->use_tag = 1;
 	task->destroy = 0;
 
 	return plan;
 }
 
-static starpu_tag_t
+static starpu_event
 STARPUFFT(start2dC2C)(STARPUFFT(plan) plan)
 {
 	STARPU_ASSERT(plan->type == C2C);
 	int z;
 
 	for (z=0; z < plan->totsize1; z++) {
-		starpu_task_submit(plan->twist1_tasks[z], NULL);
-		starpu_task_submit(plan->fft1_tasks[z], NULL);
+      starpu_event twist1_event, fft1_event;
+		
+      starpu_task_submit(plan->twist1_tasks[z], &twist1_event);
+		starpu_task_submit_ex(plan->fft1_tasks[z], 1, &twist1_event, &fft1_event);
+
+      starpu_task_declare_deps_array(plan->join_task, 1, &fft1_event);
+
+      starpu_event_release(twist1_event);
+      starpu_event_release(fft1_event);
 	}
 
-	starpu_task_submit(plan->join_task, NULL);
+   starpu_event join_event;
+	starpu_task_submit(plan->join_task, &join_event);
 
 	for (z=0; z < plan->totsize3; z++) {
-		starpu_task_submit(plan->twist2_tasks[z], NULL);
-		starpu_task_submit(plan->fft2_tasks[z], NULL);
-		starpu_task_submit(plan->twist3_tasks[z], NULL);
+      starpu_event twist2_event, fft2_event, twist3_event;
+
+		starpu_task_submit_ex(plan->twist2_tasks[z], 1, &join_event, &twist2_event);
+		starpu_task_submit_ex(plan->fft2_tasks[z], 1, &twist2_event, &fft2_event);
+		starpu_task_submit_ex(plan->twist3_tasks[z], 1, &fft2_event, &twist3_event);
+
+      starpu_task_declare_deps_array(plan->end_task, 1, &twist3_event);
+
+      starpu_event_release(twist2_event);
+      starpu_event_release(fft2_event);
+      starpu_event_release(twist3_event);
 	}
 
-	starpu_task_submit(plan->end_task, NULL);
+   starpu_event_release(join_event);
 
-	return STEP_TAG_2D(plan, END, 0, 0);
-}
+   starpu_event event;
+	starpu_task_submit(plan->end_task, &event);
 
-static void
-STARPUFFT(free_2d_tags)(STARPUFFT(plan) plan)
-{
-	unsigned i, j;
-	int n1 = plan->n1[0];
-	int m1 = plan->n1[1];
-
-	for (i = 0; i < n1; i++) {
-		for (j = 0; j < m1; j++) {
-			starpu_tag_remove(STEP_TAG_2D(plan, TWIST1, i, j));
-			starpu_tag_remove(STEP_TAG_2D(plan, FFT1, i, j));
-		}
-	}
-
-	starpu_tag_remove(STEP_TAG_2D(plan, JOIN, 0, 0));
-
-	for (i = 0; i < DIV_2D_N; i++) {
-		for (j = 0; j < DIV_2D_M; j++) {
-			starpu_tag_remove(STEP_TAG_2D(plan, TWIST2, i, j));
-			starpu_tag_remove(STEP_TAG_2D(plan, FFT2, i, j));
-			starpu_tag_remove(STEP_TAG_2D(plan, TWIST3, i, j));
-		}
-	}
-
-	starpu_tag_remove(STEP_TAG_2D(plan, END, 0, 0));
+	return event;
 }
