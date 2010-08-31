@@ -177,41 +177,6 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 
 }
 
-/* This function is called when a new task is submitted to StarPU 
- * it returns 1 if the tag deps are not fulfilled, 0 otherwise */
-static unsigned _starpu_not_all_tag_deps_are_fulfilled(starpu_job_t j)
-{
-	unsigned ret;
-
-	if (!j->task->use_tag)
-	{
-		/* this task does not use tags, so we can go on */
-		return 0;
-	}
-
-	struct starpu_tag_s *tag = j->tag;
-
-	struct starpu_cg_list_s *tag_successors = &tag->tag_successors;
-
-	_starpu_spin_lock(&tag->lock);
-
-	if (tag_successors->ndeps != tag_successors->ndeps_completed)
-	{
-		tag->state = STARPU_BLOCKED;
-		ret = 1;
-	}
-	else {
-		/* existing deps (if any) are fulfilled */
-		tag->state = STARPU_READY;
-		/* already prepare for next run */
-		tag_successors->ndeps_completed = 0;
-		ret = 0;
-	}
-
-	_starpu_spin_unlock(&tag->lock);
-	return ret;
-}
-
 static unsigned _starpu_not_all_task_deps_are_fulfilled(starpu_job_t j, unsigned job_is_already_locked)
 {
 	unsigned ret;
@@ -249,8 +214,27 @@ unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_alrea
 	unsigned ret;
 
 	/* enfore tag dependencies */
-	if (_starpu_not_all_tag_deps_are_fulfilled(j))
-		return 0;
+	if (j->task->use_tag)
+	{
+	   struct starpu_tag_s *tag = j->tag;
+   	struct starpu_cg_list_s *tag_successors = &tag->tag_successors;
+
+      _starpu_spin_lock(&tag->lock);
+
+      if (tag_successors->ndeps != tag_successors->ndeps_completed)
+      {
+         tag->state = STARPU_BLOCKED;
+         return 0;
+      }
+      else {
+         /* existing deps (if any) are fulfilled */
+         tag->state = STARPU_READY;
+         /* already prepare for next run */
+         tag_successors->ndeps_completed = 0;
+      }
+
+      _starpu_spin_unlock(&tag->lock);
+   }
 
 	/* enfore task dependencies */
 	if (_starpu_not_all_task_deps_are_fulfilled(j, job_is_already_locked))
