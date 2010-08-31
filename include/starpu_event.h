@@ -23,6 +23,8 @@ extern "C" {
 
 typedef struct starpu_event_t * starpu_event;
 
+#include <starpu_profiling.h>
+
 int starpu_event_release(starpu_event);
 int starpu_event_retain(starpu_event);
 
@@ -41,6 +43,9 @@ void starpu_event_profiling_submit_time(starpu_event, struct timespec*);
 void starpu_event_profiling_start_time(starpu_event, struct timespec*);
 void starpu_event_profiling_end_time(starpu_event, struct timespec*);
 int starpu_event_profiling_worker_id(starpu_event);
+
+starpu_event starpu_event_group_create(int num_events, starpu_event *events);
+
 
 #ifdef __cplusplus
 }

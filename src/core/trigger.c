@@ -15,11 +15,21 @@
  */
 
 #include <pthread.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <core/trigger.h>
-#include <starpu_event.h>
 #include <core/event.h>
 
+starpu_trigger _starpu_trigger_create(void (*callback)(void*), void*data) {
+   starpu_trigger trigger;
+
+   trigger = malloc(sizeof(struct starpu_trigger_t));
+   _starpu_trigger_init(trigger, callback, data);
+
+   trigger->allocated = 1;
+
+   return trigger;
+}
 
 void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void *data) {
 
@@ -28,6 +38,7 @@ void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void 
    /* The "+1" is used to enable this trigger */
    trigger->dep_count = 1;
    trigger->enabled = 0;
+   trigger->allocated = 0;
 }
 
 void _starpu_trigger_events_register(starpu_trigger trigger, int num_events, starpu_event *events) {
@@ -49,6 +60,12 @@ void _starpu_trigger_enable(starpu_trigger trigger) {
 
 void _starpu_trigger_signal(starpu_trigger trigger) {
    int dep_count =__sync_sub_and_fetch(&trigger->dep_count, 1);
-   if (dep_count == 0)
+
+   if (dep_count == 0) {
+
       trigger->callback(trigger->data);
+
+      if (trigger->allocated)
+         free(trigger);
+   }
 }

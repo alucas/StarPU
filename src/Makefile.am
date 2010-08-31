@@ -123,6 +123,7 @@ libstarpu_la_SOURCES = 						\
 	core/topology.c						\
 	core/debug.c						\
 	core/event.c						\
+	core/event_group.c						\
 	core/errorcheck.c					\
 	core/progress_hook.c					\
 	core/dependencies/implicit_data_deps.c			\
