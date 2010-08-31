@@ -70,7 +70,6 @@ void starpu_execute_on_each_worker(void (*func)(void *), void *arg, uint32_t whe
 		task->execute_on_a_specific_worker = 1;
 		task->workerid = worker;
 
-		task->detach = 1;
 		task->destroy = 1;
 
 #ifdef STARPU_USE_FXT

@@ -81,7 +81,6 @@ int main(int argc, char **argv)
 		task->callback_func = NULL;
 		task->callback_arg = NULL;
 
-		task->detach = 0;
 		task->destroy = 0;
 		
       starpu_event event;

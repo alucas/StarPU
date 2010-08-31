@@ -87,7 +87,6 @@ int main(int argc, char **argv)
 
 	task.cl = &dummy_codelet;
 	task.regenerate = 1;
-	task.detach = 1;
 
 	task.callback_func = callback;
 
