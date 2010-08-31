@@ -53,7 +53,6 @@ void starpu_task_init(struct starpu_task *task)
 	task->callback_arg = NULL;
 
 	task->priority = STARPU_DEFAULT_PRIO;
-	task->use_tag = 0;
 	task->synchronous = 0;
 
 	task->execute_on_a_specific_worker = 0;
@@ -229,6 +228,11 @@ int starpu_task_submit(struct starpu_task *task, starpu_event *event)
    }
 
 	return ret;
+}
+
+int starpu_task_submit_ex(struct starpu_task *task, int num_events, starpu_event *events, starpu_event *event) {
+   starpu_task_declare_deps_array(task, num_events, events);
+   return starpu_task_submit(task, event);
 }
 
 void starpu_display_codelet_stats(struct starpu_codelet_t *cl)

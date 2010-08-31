@@ -27,9 +27,6 @@ starpu_data_handle A_state[MAXSLICESY][MAXSLICESZ];
 starpu_data_handle B_state[MAXSLICESZ][MAXSLICESX];
 starpu_data_handle C_state[MAXSLICESY][MAXSLICESX];
 
-#define TAG(x,y,z,iter)	\
-		((starpu_tag_t)((z) + (iter)*nslicesz + (x)*(nslicesz*niter) + (y)*(nslicesx*nslicesz*niter)))
-
 static void submit_new_iter(unsigned x, unsigned y, unsigned iter);
 
 /*
@@ -206,18 +203,6 @@ static void cleanup_problem(void)
 	//		free(B[z][x]);
 		}
 	}
-
-	for (y = 0; y < nslicesy; y++)
-	{
-		for (x = 0; x < nslicesx; x++)
-		{
-	//		free(C[y][x]);
-			starpu_tag_remove(TAG(nslicesz - 1, y, x, niter - 1));
-		}
-	}
-
-	
-	
 }
 
 struct cb2_s {
@@ -272,9 +257,6 @@ static struct starpu_task *construct_task(unsigned x, unsigned y, unsigned z, un
 	task->cl_arg_size = sizeof(struct ibm_sgemm_block_conf);
 #endif
 
-	task->use_tag = 1;
-	task->tag_id = TAG(z, y, x, iter);
-
 	task->buffers[0].handle = A_state[y][z];
 	task->buffers[0].mode = STARPU_R;
 	task->buffers[1].handle = B_state[z][x];
@@ -302,17 +284,6 @@ static void callback_func_2(void *arg)
 	flop_per_worker[id] += BLAS3_FLOP(BLOCKSIZEX, BLOCKSIZEY, BLOCKSIZEZ);
 	ls_per_worker[id] += BLAS3_LS(BLOCKSIZEX, BLOCKSIZEY, BLOCKSIZEZ);
 
-	/* TAG(nslicesz - 1, y, x, iter) remains ... */
-	for (z = 0; z < nslicesz - 1; z++)
-	{
-		starpu_tag_remove(TAG(z, y, x, iter));
-	}
-
-	if (iter > 0)
-	{
-		starpu_tag_remove(TAG(nslicesz - 1, y, x, iter-1));
-	}
-	
 	if (iter != niter - 1) {
 		submit_new_iter(x, y, iter+1);
 	}
@@ -323,13 +294,16 @@ static void callback_func_2(void *arg)
 static void submit_new_iter(unsigned x, unsigned y, unsigned iter)
 {
 	unsigned z;
+   starpu_event event = NULL;
+
 	for (z = 0; z < nslicesz; z++) 
 	{
 		struct starpu_task *task;
 		task = construct_task(x, y, z, iter);
 		
-		if (z != 0) {
-			starpu_tag_declare_deps(TAG(z, y, x, iter), 1, TAG(z-1, y, x, iter));
+		if (event != NULL) {
+			starpu_task_declare_deps(task, 1, &event);
+         starpu_event_release(event);
 		}
 
 		if (z == nslicesz - 1) {
@@ -341,8 +315,10 @@ static void submit_new_iter(unsigned x, unsigned y, unsigned iter)
 			task->callback_arg = cb2;
 		}
 
-		starpu_task_submit(task, NULL);
+		starpu_task_submit(task, &event);
 	}
+
+   starpu_event_release(event);
 }
 
 static void launch_codelets(void)

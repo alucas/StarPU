@@ -80,7 +80,7 @@ static starpu_codelet cl21 =
 	.model = &chol_model_21
 };
 
-static void create_task_21(starpu_data_handle dataA, unsigned k, unsigned j, unsigned reclevel)
+static struct starpu_task * create_task_21(starpu_data_handle dataA, unsigned k, unsigned j, unsigned reclevel)
 {
 	struct starpu_task *task = create_task(TAG21_AUX(k, j, reclevel));
 
@@ -104,7 +104,7 @@ static void create_task_21(starpu_data_handle dataA, unsigned k, unsigned j, uns
 		starpu_tag_declare_deps(TAG21_AUX(k, j, reclevel), 1, TAG11_AUX(k, reclevel));
 	}
 
-	starpu_task_submit(task, NULL);
+	return task;
 }
 
 static starpu_codelet cl22 =
@@ -118,7 +118,7 @@ static starpu_codelet cl22 =
 	.model = &chol_model_22
 };
 
-static void create_task_22(starpu_data_handle dataA, unsigned k, unsigned i, unsigned j, unsigned reclevel)
+static struct starpu_task * create_task_22(starpu_data_handle dataA, unsigned k, unsigned i, unsigned j, unsigned reclevel)
 {
 //	printf("task 22 k,i,j = %d,%d,%d TAG = %llx\n", k,i,j, TAG22_AUX(k,i,j));
 
@@ -146,7 +146,7 @@ static void create_task_22(starpu_data_handle dataA, unsigned k, unsigned i, uns
 		starpu_tag_declare_deps(TAG22_AUX(k, i, j, reclevel), 2, TAG21_AUX(k, i, reclevel), TAG21_AUX(k, j, reclevel));
 	}
 
-	starpu_task_submit(task, NULL);
+	return task;
 }
 
 
