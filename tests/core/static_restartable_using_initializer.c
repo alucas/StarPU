@@ -64,7 +64,6 @@ int main(int argc, char **argv)
 	starpu_init(NULL);
 
 	task.cl = &dummy_codelet;
-	task.detach = 0;
 
 	fprintf(stderr, "#tasks : %d\n", ntasks);
 

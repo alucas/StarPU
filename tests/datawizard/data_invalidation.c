@@ -103,7 +103,6 @@ int main(int argc, char **argv)
 		memset_task->cl = &memset_cl;
 		memset_task->buffers[0].handle = v_handle;
 		memset_task->buffers[0].mode = STARPU_W;
-		memset_task->detach = 0;
 	
       starpu_event event;
 		ret = starpu_task_submit(memset_task, &event);
@@ -120,7 +119,6 @@ int main(int argc, char **argv)
 		check_content_task->cl = &check_content_cl;
 		check_content_task->buffers[0].handle = v_handle;
 		check_content_task->buffers[0].mode = STARPU_R;
-		check_content_task->detach = 0;
 	
 		ret = starpu_task_submit(check_content_task, &event);
 		if (ret == -ENODEV)

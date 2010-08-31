@@ -56,8 +56,6 @@ void starpu_task_init(struct starpu_task *task)
 
 	task->execute_on_a_specific_worker = 0;
 
-	task->detach = 1;
-
 	/* by default, we do not let StarPU free the task structure since
 	 * starpu_task_init is likely to be used only for statically allocated
 	 * tasks */
@@ -127,7 +125,6 @@ void starpu_task_destroy(struct starpu_task *task)
 
       starpu_task_deinit(task);
 
-      /* TODO handle the case of task with detach = 1 and destroy = 1 */
       /* TODO handle the case of non terminated tasks -> return -EINVAL */
 	
       free(task);
@@ -173,8 +170,6 @@ int starpu_task_submit(struct starpu_task *task, starpu_event *event)
 		 * (blocking) task */
 		if (STARPU_UNLIKELY(!_starpu_worker_may_perform_blocking_calls()))
 			return -EDEADLK;
-
-		task->detach = 0;
 	}
 
 	STARPU_ASSERT(task);

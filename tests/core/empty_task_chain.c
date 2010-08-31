@@ -39,7 +39,6 @@ int main(int argc, char **argv)
          ret = starpu_task_submit(tasks[i], NULL);
       }
       else {
-			tasks[i]->detach = 0;
          ret = starpu_task_submit(tasks[i], &event);
       }
 

@@ -63,10 +63,8 @@ int main(int argc, char **argv)
 		 * termination, we cannot declare a dependency on something
 		 * that does not exist anymore. */
 		taskA->destroy = 0;
-		taskA->detach = 0;
 
 		/* we wait for the tasks explicitly */
-		taskB->detach = 0;
 
       starpu_event eventA, eventB;
 
