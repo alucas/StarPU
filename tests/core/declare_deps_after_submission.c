@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 		ret = starpu_task_submit(taskA, &eventA);
 		STARPU_ASSERT(!ret);
 
-		starpu_task_declare_deps_array(taskB, 1, &taskA);
+		starpu_task_declare_deps_array(taskB, 1, &eventA);
 
 		ret = starpu_task_submit(taskB, &eventB);
 		STARPU_ASSERT(!ret);

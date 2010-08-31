@@ -181,7 +181,7 @@ void starpu_tag_declare_deps(starpu_tag_t id, unsigned ndeps, ...);
 void starpu_tag_declare_deps_array(starpu_tag_t id, unsigned ndeps, starpu_tag_t *array);
 
 /* task depends on the tasks in task array */
-void starpu_task_declare_deps_array(struct starpu_task *task, unsigned ndeps, struct starpu_task *task_array[]);
+void starpu_task_declare_deps_array(struct starpu_task *task, unsigned num_events, starpu_event * events);
 
 int starpu_tag_wait(starpu_tag_t id);
 int starpu_tag_wait_array(unsigned ntags, starpu_tag_t *id);
@@ -226,6 +226,13 @@ void starpu_display_codelet_stats(struct starpu_codelet_t *cl);
  * either from a thread that is not a task or simply because there is no task
  * being executed at the moment. */
 struct starpu_task *starpu_get_current_task(void);
+
+/* Return the event taht will be triggered when the current task terminates
+ * or NULL if this is called either from a thread that is not a task or simply
+ * because there is no task being executed at the moment.
+ * Obtained event has to be released with starpu_event_release.
+ */
+starpu_event starpu_get_current_task_event(void);
 
 #ifdef __cplusplus
 }

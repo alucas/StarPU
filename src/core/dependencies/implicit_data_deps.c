@@ -58,8 +58,8 @@ void _starpu_detect_implicit_data_deps_with_handle(struct starpu_task *pre_sync_
 				/* This task depends on the previous writer */
 				if (handle->last_submitted_writer)
 				{
-					struct starpu_task *task_array[1] = {handle->last_submitted_writer};
-					starpu_task_declare_deps_array(pre_sync_task, 1, task_array);
+               starpu_job_t job = _starpu_get_job_associated_to_task(handle->last_submitted_writer);
+					starpu_task_declare_deps_array(pre_sync_task, 1, &job->event);
 				}
 
 #ifdef STARPU_USE_FXT
@@ -91,14 +91,15 @@ void _starpu_detect_implicit_data_deps_with_handle(struct starpu_task *pre_sync_
 					l = l->next;
 				}
 
-				struct starpu_task *task_array[nreaders];
+				starpu_event *events[nreaders];
 
 				unsigned i = 0;
 				l = handle->last_submitted_readers;
 				while (l)
 				{
 					STARPU_ASSERT(l->task);
-					task_array[i++] = l->task;
+				   starpu_job_t job = _starpu_get_job_associated_to_task(l->task);
+					events[i++] = job->event;
 
 					struct starpu_task_list *prev = l;
 					l = l->next;
@@ -124,7 +125,7 @@ void _starpu_detect_implicit_data_deps_with_handle(struct starpu_task *pre_sync_
 				handle->last_submitted_readers = NULL;
 				handle->last_submitted_writer = post_sync_task;
 	
-				starpu_task_declare_deps_array(pre_sync_task, nreaders, task_array);
+				starpu_task_declare_deps_array(pre_sync_task, nreaders, events);
 			}
 	
 		}
@@ -142,8 +143,8 @@ void _starpu_detect_implicit_data_deps_with_handle(struct starpu_task *pre_sync_
 			/* This task depends on the previous writer if any */
 			if (handle->last_submitted_writer)
 			{
-				struct starpu_task *task_array[1] = {handle->last_submitted_writer};
-				starpu_task_declare_deps_array(pre_sync_task, 1, task_array);
+				starpu_job_t job = _starpu_get_job_associated_to_task(handle->last_submitted_writer);
+				starpu_task_declare_deps_array(pre_sync_task, 1, &job->event);
 			}
 
 #ifdef STARPU_USE_FXT
