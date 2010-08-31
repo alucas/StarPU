@@ -45,21 +45,17 @@ struct starpu_cg_list_s {
 
 #define STARPU_CG_APPS	(1<<0)
 #define STARPU_CG_TAG	(1<<1)
-#define STARPU_CG_TASK	(1<<2)
 
 /* Completion Group */
 typedef struct starpu_cg_s {
 	unsigned ntags; /* number of tags depended on */
 	unsigned remaining; /* number of remaining tags */
 
-	unsigned cg_type; /* STARPU_CG_APPS or STARPU_CG_TAG or STARPU_CG_TASK */
+	unsigned cg_type; /* STARPU_CG_APPS or STARPU_CG_TAG */
 
 	union {
 		/* STARPU_CG_TAG */
 		struct starpu_tag_s *tag;
-
-		/* STARPU_CG_TASK */
-		struct starpu_job_s *job;
 
 		/* STARPU_CG_APPS */
 		/* in case this completion group is related to an application,

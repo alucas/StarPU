@@ -56,13 +56,13 @@ int main(int argc, char **argv)
 	taskA = create_dummy_task();
 	taskB = create_dummy_task();
 
-	/* B depends on A */
-	starpu_task_declare_deps_array(taskB, 1, &taskA);
-
    starpu_event eventA, eventB;
 
-	starpu_task_submit(taskB, &eventB);
+	/* B depends on A */
 	starpu_task_submit(taskA, &eventA);
+	starpu_task_declare_deps_array(taskB, 1, &eventA);
+   starpu_event_release(eventA);
+	starpu_task_submit(taskB, &eventB);
 
 	starpu_event_wait(eventB);
    starpu_event_release(eventB);
