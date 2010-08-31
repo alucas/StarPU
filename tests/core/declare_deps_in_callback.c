@@ -24,12 +24,14 @@
 
 static void callback(void *arg)
 {
-	struct starpu_task *taskA, *taskB;
+	struct starpu_task *taskB;
+   starpu_event eventA;
 
-	taskA = starpu_get_current_task();
+	eventA = starpu_get_current_task_event();
 	taskB = arg;
 
-	starpu_task_declare_deps_array(taskB, 1, &taskA);
+	starpu_task_declare_deps_array(taskB, 1, &eventA);
+   starpu_event_release(eventA);
 	starpu_task_submit(taskB, NULL);
 }
 
