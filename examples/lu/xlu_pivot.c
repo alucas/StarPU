@@ -96,7 +96,7 @@ static void create_task_11_pivot(starpu_data_handle *dataAp, unsigned nblocks,
 
 	/* enforce dependencies ... */
    starpu_event old = EVENT(k,k);
-   starpu_task_submit_ex(task, &, &old, &EVENT(k,k));
+   starpu_task_submit_ex(task, 1, &old, &EVENT(k,k));
    starpu_event_release(old);
 }
 
@@ -130,7 +130,7 @@ static void create_task_12(starpu_data_handle *dataAp, unsigned nblocks, unsigne
       starpu_task_declare_deps_array(task, 1, &EVENT(k,j));
 	}
 	else {
-		starpu_task_declare_deps(task, 1, &EVENT(k,k));
+		starpu_task_declare_deps_array(task, 1, &EVENT(k,k));
 	}
 
 	starpu_task_submit(task, NULL);
@@ -164,7 +164,7 @@ static void create_task_22(starpu_data_handle *dataAp, unsigned nblocks, unsigne
 {
 //	printf("task 22 k,i,j = %d,%d,%d TAG = %llx\n", k,i,j, TAG22(k,i,j));
 
-	struct starpu_task *task = create_task(TAG22(k, i, j));
+	struct starpu_task *task = create_task();
 
 	task->cl = &cl22;
 
