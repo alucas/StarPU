@@ -78,6 +78,5 @@ void _starpu_cg_list_deinit(struct starpu_cg_list_s *list);
 void _starpu_add_successor_to_cg_list(struct starpu_cg_list_s *successors, starpu_cg_t *cg);
 void _starpu_notify_cg(starpu_cg_t *cg);
 void _starpu_notify_cg_list(struct starpu_cg_list_s *successors);
-void _starpu_notify_task_dependencies(struct starpu_job_s *j);
 
 #endif // __CG_H__

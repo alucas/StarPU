@@ -29,9 +29,6 @@ void _starpu_notify_dependencies(struct starpu_job_s *j)
 	STARPU_ASSERT(j);
 	STARPU_ASSERT(j->task);
 
-	/* unlock tasks depending on that task */
-	_starpu_notify_task_dependencies(j);
-	
 	/* unlock tags depending on that task */
 	if (j->task->use_tag)
 		_starpu_notify_tag_dependencies(j->tag);
