@@ -30,6 +30,7 @@
 #include <common/timing.h>
 #include <common/list.h>
 #include <common/fxt.h>
+#include <core/trigger.h>
 #include <core/dependencies/tags.h>
 #include <datawizard/datawizard.h>
 #include <core/perfmodel/perfmodel.h>
@@ -56,6 +57,9 @@ LIST_TYPE(starpu_job,
 	struct starpu_task *task;
 
    starpu_event event;
+
+   struct starpu_trigger_t trigger;
+   int ready;
 
 	pthread_mutex_t sync_mutex;
 	pthread_cond_t sync_cond;
