@@ -16,6 +16,7 @@
 
 #include <starpu.h>
 #include <starpu_profiling.h>
+#include <starpu_event.h>
 #include <assert.h>
 
 static unsigned niter = 500;
@@ -49,8 +50,8 @@ int main(int argc, char **argv)
 		.nbuffers = 0
 	};
 
-	struct starpu_task **tasks = malloc(niter*sizeof(struct starpu_task *));
-	assert(tasks);
+	starpu_event *events = malloc(niter*sizeof(starpu_event));
+	assert(events);
 
 	unsigned i;
 	for (i = 0; i < niter; i++)
@@ -59,13 +60,7 @@ int main(int argc, char **argv)
 
 		task->cl = &cl;
 
-		/* We will destroy the task structure by hand so that we can
-		 * query the profiling info before the task is destroyed. */
-		task->destroy = 0;
-		
-		tasks[i] = task;
-
-		int ret = starpu_task_submit(task, NULL);
+		int ret = starpu_task_submit(task, &events[i]);
 		if (STARPU_UNLIKELY(ret == -ENODEV))
 		{
 			fprintf(stderr, "No worker may execute this task\n");
@@ -80,20 +75,21 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < niter; i++)
 	{
-		struct starpu_task *task = tasks[i];
-		struct starpu_task_profiling_info *info = task->profiling_info;
+      struct timespec submit_time, start_time, end_time;
+
+      starpu_event_profiling_submit_time(events[i], &submit_time);
+      starpu_event_profiling_start_time(events[i], &start_time);
+      starpu_event_profiling_end_time(events[i], &end_time);
 
 		/* How much time did it take before the task started ? */
-		delay_sum += starpu_timing_timespec_delay_us(&info->submit_time, &info->start_time);
+		delay_sum += starpu_timing_timespec_delay_us(&submit_time, &start_time);
 
 		/* How long was the task execution ? */
-		length_sum += starpu_timing_timespec_delay_us(&info->start_time, &info->end_time);
+		length_sum += starpu_timing_timespec_delay_us(&start_time, &end_time);
 
-		/* We don't need the task structure anymore */
-		starpu_task_destroy(task);
 	}
 
-	free(tasks);
+	free(events);
 
 	fprintf(stderr, "Avg. delay : %2.2lf us\n", (delay_sum)/niter);
 	fprintf(stderr, "Avg. length : %2.2lf us\n", (length_sum)/niter);

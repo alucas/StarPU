@@ -22,7 +22,8 @@
 #include <starpu_profiling.h>
 #include <common/config.h>
 
-struct starpu_task_profiling_info *_starpu_allocate_profiling_info_if_needed(void);
+int starpu_profiling_enabled();
+
 void _starpu_worker_reset_profiling_info(int workerid);
 void _starpu_worker_update_profiling_info_executing(int workerid, struct timespec *executing_time, int executed_tasks);
 void _starpu_worker_update_profiling_info_sleeping(int workerid, struct timespec *sleeping_start, struct timespec *sleeping_end);

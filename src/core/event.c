@@ -14,12 +14,15 @@
  * See the GNU Lesser General Public License in COPYING.LGPL for more details.
  */
 
+#include <starpu_util.h>
+#include <starpu_profiling.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <core/event.h>
 #include <core/errorcheck.h>
-#include <starpu_util.h>
+#include <common/timing.h>
+#include <profiling/profiling.h>
 
 struct starpu_event_t {
    /* Public reference counter */
@@ -31,11 +34,17 @@ struct starpu_event_t {
    /* Indicates if this event is complete */
    volatile int complete;
 
-
    /* Mutex & Cond */
    pthread_mutex_t mutex;
    pthread_cond_t cond;
    volatile int cond_wait_count;
+
+   /* Profiling */
+   int profiling_enabled;
+	struct timespec prof_submit_time;
+	struct timespec prof_start_time;
+	struct timespec prof_end_time;
+	int prof_workerid;
 
    /* Associated triggers */
    int trigger_count;
@@ -140,6 +149,18 @@ starpu_event _starpu_event_create() {
    pthread_cond_init(&ev->cond, NULL);
    ev->cond_wait_count = 0;
 
+   /* Profiling */
+   if (!starpu_profiling_enabled()) {
+      ev->profiling_enabled = 0;
+   }
+   else {
+      ev->profiling_enabled = 1;
+		starpu_clock_gettime(&ev->prof_submit_time);
+		starpu_timespec_clear(&ev->prof_start_time);
+		starpu_timespec_clear(&ev->prof_end_time);
+      ev->prof_workerid = -1;
+   }
+
    return ev;
 }
 
@@ -220,4 +241,45 @@ int _starpu_event_free(starpu_event event) {
    pthread_cond_destroy(&event->cond);
 
    return 0;
+}
+
+int _starpu_event_profiling_enabled(starpu_event event) {
+   return event->profiling_enabled;
+}
+
+int _starpu_event_profiling_submit_time_set(starpu_event event, struct timespec* ts) {
+   memcpy(&event->prof_submit_time, ts, sizeof(struct timespec));
+   return 0;
+}
+
+int _starpu_event_profiling_start_time_set(starpu_event event, struct timespec* ts) {
+   memcpy(&event->prof_start_time, ts, sizeof(struct timespec));
+   return 0;
+}
+
+int _starpu_event_profiling_end_time_set(starpu_event event, struct timespec* ts) {
+   memcpy(&event->prof_end_time, ts, sizeof(struct timespec));
+   return 0;
+}
+
+int _starpu_event_profiling_worker_id_set(starpu_event event, int wid) {
+   event->prof_workerid = wid;
+   return 0;
+}
+
+
+void starpu_event_profiling_submit_time(starpu_event event, struct timespec* ts) {
+   memcpy(ts, &event->prof_submit_time, sizeof(struct timespec));
+}
+
+void starpu_event_profiling_start_time(starpu_event event, struct timespec* ts) {
+   memcpy(ts, &event->prof_start_time, sizeof(struct timespec));
+}
+
+void starpu_event_profiling_end_time(starpu_event event, struct timespec* ts) {
+   memcpy(ts, &event->prof_end_time, sizeof(struct timespec));
+}
+
+int starpu_event_profiling_worker_id(starpu_event event) {
+   return event->prof_workerid;
 }
