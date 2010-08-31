@@ -17,20 +17,11 @@
 #include "xlu.h"
 #include "xlu_kernels.h"
 
-#define TAG11(k)	((starpu_tag_t)( (1ULL<<60) | (unsigned long long)(k)))
-#define TAG12(k,i)	((starpu_tag_t)(((2ULL<<60) | (((unsigned long long)(k))<<32)	\
-					| (unsigned long long)(i))))
-#define TAG21(k,j)	((starpu_tag_t)(((3ULL<<60) | (((unsigned long long)(k))<<32)	\
-					| (unsigned long long)(j))))
-#define TAG22(k,i,j)	((starpu_tag_t)(((4ULL<<60) | ((unsigned long long)(k)<<32) 	\
-					| ((unsigned long long)(i)<<16)	\
-					| (unsigned long long)(j))))
-#define PIVOT(k,i)	((starpu_tag_t)(((5ULL<<60) | (((unsigned long long)(k))<<32)	\
-					| (unsigned long long)(i))))
-
 static unsigned no_prio = 0;
 static starpu_event *events;
+static starpu_event *pivots;
 #define EVENT(x,y) events[x*nblocks+y]
+#define PIVOT(x) pivots[x]
 
 /*
  *	Construct the DAG
@@ -74,21 +65,15 @@ static void create_task_pivot(starpu_data_handle *dataAp, unsigned nblocks,
          starpu_task_declare_deps_array(task, 2, deps);
 		}
 		else {
-			starpu_tag_t *tags = malloc((nblocks - k)*sizeof(starpu_tag_t));
-			
-			tags[0] = TAG11(k);
-			unsigned ind, ind2;
-			for (ind = k + 1, ind2 = 0; ind < nblocks; ind++, ind2++)
-			{
-				tags[1 + ind2] = TAG22(k-1, ind, k);
-			}
+         starpu_task_declare_deps_array(task, 1, &EVENT(k,k));
 
-			/* perhaps we could do better ... :/  */
-			starpu_tag_declare_deps_array(PIVOT(k, i), (nblocks-k), tags);
+			unsigned ind;
+			for (ind = k + 1; ind < nblocks; ind++)
+            starpu_task_declare_deps_array(task, 1, &EVENT(ind,k));
 		}
 	}
 
-	starpu_task_submit(task, NULL);
+	starpu_task_submit(task, &PIVOT(i));
 }
 
 static void create_task_11_pivot(starpu_data_handle *dataAp, unsigned nblocks,
@@ -120,11 +105,11 @@ static void create_task_12(starpu_data_handle *dataAp, unsigned nblocks, unsigne
 {
 //	printf("task 12 k,i = %d,%d TAG = %llx\n", k,i, TAG12(k,i));
 
-	struct starpu_task *task = create_task(TAG12(k, j));
+	struct starpu_task *task = create_task();
 	
 	task->cl = &cl12;
 
-	task->cl_arg = (void *)(task->tag_id);
+	task->cl_arg = NULL;
 
 	/* which sub-data is manipulated ? */
 	task->buffers[0].handle = get_block(dataAp, nblocks, k, k);
@@ -141,10 +126,11 @@ static void create_task_12(starpu_data_handle *dataAp, unsigned nblocks, unsigne
 	starpu_tag_declare_deps(TAG12(k, i), 1, PIVOT(k, i));
 #endif
 	if (k > 0) {
-		starpu_tag_declare_deps(TAG12(k, j), 2, TAG11(k), TAG22(k-1, k, j));
+      starpu_task_declare_deps_array(task, 1, &EVENT(k,k));
+      starpu_task_declare_deps_array(task, 1, &EVENT(k,j));
 	}
 	else {
-		starpu_tag_declare_deps(TAG12(k, j), 1, TAG11(k));
+		starpu_task_declare_deps(task, 1, &EVENT(k,k));
 	}
 
 	starpu_task_submit(task, NULL);
@@ -153,7 +139,7 @@ static void create_task_12(starpu_data_handle *dataAp, unsigned nblocks, unsigne
 static void create_task_21(starpu_data_handle *dataAp, unsigned nblocks, unsigned k, unsigned i,
 				starpu_data_handle (* get_block)(starpu_data_handle *, unsigned, unsigned, unsigned))
 {
-	struct starpu_task *task = create_task(TAG21(k, i));
+	struct starpu_task *task = create_task();
 
 	task->cl = &cl21;
 	
@@ -167,12 +153,10 @@ static void create_task_21(starpu_data_handle *dataAp, unsigned nblocks, unsigne
 		task->priority = STARPU_MAX_PRIO;
 	}
 
-	task->cl_arg = (void *)(task->tag_id);
+	task->cl_arg = NULL;
 
 	/* enforce dependencies ... */
-	starpu_tag_declare_deps(TAG21(k, i), 1, PIVOT(k, i));
-
-	starpu_task_submit(task, NULL);
+	starpu_task_submit_ex(task, 1, &PIVOT(i), &EVENT(i,k));
 }
 
 static void create_task_22(starpu_data_handle *dataAp, unsigned nblocks, unsigned k, unsigned i, unsigned j,
@@ -184,7 +168,7 @@ static void create_task_22(starpu_data_handle *dataAp, unsigned nblocks, unsigne
 
 	task->cl = &cl22;
 
-	task->cl_arg = (void *)(task->tag_id);
+	task->cl_arg = NULL;
 
 	/* which sub-data is manipulated ? */
 	task->buffers[0].handle = get_block(dataAp, nblocks, k, i); /* produced by TAG21(k, i) */
@@ -200,13 +184,16 @@ static void create_task_22(starpu_data_handle *dataAp, unsigned nblocks, unsigne
 
 	/* enforce dependencies ... */
 	if (k > 0) {
-		starpu_tag_declare_deps(TAG22(k, i, j), 3, TAG22(k-1, i, j), TAG12(k, j), TAG21(k, i));
+      starpu_event deps[] = {EVENT(i,j), EVENT(k,j), EVENT(i,k)};
+		starpu_task_declare_deps_array(task, 3, deps);
+      starpu_event_release(EVENT(i,j));
 	}
 	else {
-		starpu_tag_declare_deps(TAG22(k, i, j), 2, TAG12(k, j), TAG21(k, i));
+      starpu_event deps[] = {EVENT(k,j), EVENT(i,k)};
+		starpu_task_declare_deps_array(task, 2, deps);
 	}
 
-	starpu_task_submit(task, NULL);
+	starpu_task_submit(task, &EVENT(i,j));
 }
 
 /*
@@ -225,21 +212,15 @@ static double dw_codelet_facto_pivot(starpu_data_handle *dataAp,
 	unsigned i,j,k;
 
    starpu_event first_event = starpu_event_create();
-   starpu_event *events = malloc(sizeof(starpu_event) * nblocks *nblocks);
+   events = malloc(sizeof(starpu_event) * nblocks * nblocks);
+   pivots = malloc(sizeof(starpu_event) * nblocks);
+
    EVENT(0,0) = first_event;
    starpu_event_retain(first_event);
 
 	for (k = 0; k < nblocks; k++)
 	{
-		struct starpu_task *task = create_task_11_pivot(dataAp, nblocks, k, piv_description, get_block);
-
-		/* we defer the launch of the first task */
-		if (k == 0) {
-			entry_task = task;
-		}
-		else {
-			starpu_task_submit(task, NULL);
-		}
+		create_task_11_pivot(dataAp, nblocks, k, piv_description, get_block);
 
 		for (i = 0; i < nblocks; i++)
 		{
@@ -260,35 +241,32 @@ static double dw_codelet_facto_pivot(starpu_data_handle *dataAp,
 				create_task_22(dataAp, nblocks, k, i, j, get_block);
 			}
 		}
-	}
 
-	/* we wait the last task (TAG11(nblocks - 1)) and all the pivot tasks */
-	starpu_tag_t *tags = malloc(nblocks*nblocks*sizeof(starpu_tag_t));
-	unsigned ndeps = 0;
-
-	tags[ndeps++] = TAG11(nblocks - 1);
-
-	for (j = 0; j < nblocks; j++)
-	{
-		for (i = 0; i < j; i++)
+		for (i = 0; i < nblocks; i++)
 		{
-			tags[ndeps++] = PIVOT(j, i);
+			if (i != k)
+				starpu_event_release(PIVOT(i));
 		}
 	}
 
+   starpu_event last_event = EVENT(nblocks-1, nblocks-1);
+   starpu_event_retain(last_event);
+
+   for (i=0; i<nblocks; i++)
+      for (j=0; j<nblocks && i<=j; j++)
+         starpu_event_release(EVENT(i,j));
+
+   free(events);
+   free(pivots);
+
+	/*FIXME:  we should wait for all the pivot tasks too */
+
 	/* schedule the codelet */
 	gettimeofday(&start, NULL);
-	int ret = starpu_task_submit(entry_task, NULL);
-	if (STARPU_UNLIKELY(ret == -ENODEV))
-	{
-		fprintf(stderr, "No worker may execute this task\n");
-		exit(-1);
-	}
+   starpu_event_trigger(first_event);
 
 	/* stall the application until the end of computations */
-	starpu_tag_wait_array(ndeps, tags);
-//	starpu_task_wait_for_all();
-
+	starpu_event_wait(last_event);
 	gettimeofday(&end, NULL);
 
 	double timing = (double)((end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec));
