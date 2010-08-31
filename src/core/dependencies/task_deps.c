@@ -58,35 +58,15 @@ void _starpu_notify_task_dependencies(starpu_job_t j)
 }
 
 /* task depends on the tasks in task array */
-void starpu_task_declare_deps_array(struct starpu_task *task, unsigned ndeps, struct starpu_task *task_array[])
+void starpu_task_declare_deps_array(struct starpu_task *task, unsigned num_events, starpu_event *events)
 {
-	if (ndeps == 0)
+	if (num_events == 0)
 		return;
 
 	starpu_job_t job;
 
 	job = _starpu_get_job_associated_to_task(task);
 
-	PTHREAD_MUTEX_LOCK(&job->sync_mutex);
-
-	starpu_cg_t *cg = create_cg_task(ndeps, job);
-
-	unsigned i;
-	for (i = 0; i < ndeps; i++)
-	{
-		struct starpu_task *dep_task = task_array[i];
-
-		starpu_job_t dep_job;
-		dep_job = _starpu_get_job_associated_to_task(dep_task);
-		STARPU_ASSERT(dep_job != job);
-
-		STARPU_TRACE_TASK_DEPS(dep_job, job);
-
-		PTHREAD_MUTEX_LOCK(&dep_job->sync_mutex);
-		_starpu_task_add_succ(dep_job, cg);
-		PTHREAD_MUTEX_UNLOCK(&dep_job->sync_mutex);
-	}
-
-	
-	PTHREAD_MUTEX_UNLOCK(&job->sync_mutex);
+   //STARPU_TRACE_TASK_DEPS(dep_job, job);
+   _starpu_trigger_events_register(&job->trigger, num_events, events);
 }

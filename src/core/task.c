@@ -310,6 +310,18 @@ struct starpu_task *starpu_get_current_task(void)
 	return pthread_getspecific(current_task_key);
 }
 
+starpu_event starpu_get_current_task_event(void)
+{
+   struct starpu_task * task = starpu_get_current_task();
+   if (task == NULL)
+      return NULL;
+   
+	starpu_job_t j = _starpu_get_job_associated_to_task(task);
+   starpu_event_retain(j->event);
+
+   return j->event;
+}
+
 void _starpu_set_current_task(struct starpu_task *task)
 {
 	pthread_setspecific(current_task_key, task);
