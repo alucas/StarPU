@@ -21,7 +21,15 @@
 
 typedef struct starpu_trigger_t * starpu_trigger;
 
-void _starpu_trigger_init(starpu_trigger trigger, int num_events, starpu_event *events, void (*callback)(starpu_trigger, void*), void *data, starpu_event *event);
+struct starpu_trigger_t {
+   void * data;
+   void (*callback)(void*);
+   int dep_count;
+
+   int enabled;
+};
+
+void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void *data);
 
 void _starpu_trigger_events_register(starpu_trigger, int num_events, starpu_event *events);
 
