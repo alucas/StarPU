@@ -23,11 +23,16 @@ extern "C" {
 
 typedef struct starpu_event_t * starpu_event;
 
-int starpu_event_release(starpu_event event);
-int starpu_event_retain(starpu_event event);
+int starpu_event_release(starpu_event);
+int starpu_event_retain(starpu_event);
 
 int starpu_event_wait(starpu_event);
 int starpu_event_wait_all(int num_events, starpu_event *events);
+int starpu_event_test(starpu_event);
+
+/* User events */
+starpu_event starpu_event_create();
+void starpu_event_trigger(starpu_event);
 
 /* Profiling
  * These functions require that StarPU profiling is enabled
