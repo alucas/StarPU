@@ -83,9 +83,6 @@ starpu_job_t __attribute__((malloc)) _starpu_job_create(struct starpu_task *task
 	PTHREAD_MUTEX_INIT(&job->sync_mutex, NULL);
 	PTHREAD_COND_INIT(&job->sync_cond, NULL);
 
-	if (task->use_tag)
-		_starpu_tag_declare(task->tag_id, job);
-
 	return job;
 }
 
@@ -109,7 +106,6 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 
 	/* in case there are dependencies, wake up the proper tasks */
 	j->submitted = 0;
-	_starpu_notify_dependencies(j);
 
 	/* We must have set the j->terminated flag early, so that it is
 	 * possible to express task dependencies within the callback
@@ -120,8 +116,6 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 	if (!job_is_already_locked)
 		PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
 
-	/* the callback is executed after the dependencies so that we may remove the tag 
- 	 * of the task itself */
 	if (task->callback_func)
 	{
 		/* so that we can check whether we are doing blocking calls
@@ -177,35 +171,11 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 }
 
 /*
- *	In order, we enforce tag, task and data dependencies. The task is
- *	passed to the scheduler only once all these constraints are fulfilled.
+ *	The task is passed to the scheduler if it has no dependency left.
  */
 unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_already_locked)
 {
 	unsigned ret;
-
-	/* enfore tag dependencies */
-	if (j->task->use_tag)
-	{
-	   struct starpu_tag_s *tag = j->tag;
-   	struct starpu_cg_list_s *tag_successors = &tag->tag_successors;
-
-      _starpu_spin_lock(&tag->lock);
-
-      if (tag_successors->ndeps != tag_successors->ndeps_completed)
-      {
-         tag->state = STARPU_BLOCKED;
-         return 0;
-      }
-      else {
-         /* existing deps (if any) are fulfilled */
-         tag->state = STARPU_READY;
-         /* already prepare for next run */
-         tag_successors->ndeps_completed = 0;
-      }
-
-      _starpu_spin_unlock(&tag->lock);
-   }
 
 	/* enforce data dependencies */
 	if (_starpu_submit_job_enforce_data_deps(j))
@@ -221,6 +191,7 @@ unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_alrea
 }
 
 /* Tag deps are already fulfilled */
+//FIXME: remove this
 unsigned _starpu_enforce_deps_starting_from_task(starpu_job_t j, unsigned job_is_already_locked)
 {
 	unsigned ret;

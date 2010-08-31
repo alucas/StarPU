@@ -49,8 +49,6 @@
 extern "C" {
 #endif
 
-typedef uint64_t starpu_tag_t;
-
 /*
  * A codelet describes the various function 
  * that may be called from a worker
@@ -91,9 +89,6 @@ struct starpu_task {
 	/* when the task is done, callback_func(callback_arg) is called */
 	void (*callback_func)(void *);
 	void *callback_arg;
-
-	unsigned use_tag;
-	starpu_tag_t tag_id;
 
 	/* options for the task execution */
 	unsigned synchronous; /* if set, a call to push is blocking */
@@ -145,7 +140,6 @@ struct starpu_task_list {
 	.callback_func = NULL,				\
 	.callback_arg = NULL,				\
 	.priority = STARPU_DEFAULT_PRIO,                \
-	.use_tag = 0,					\
 	.synchronous = 0,				\
 	.execute_on_a_specific_worker = 0,		\
 	.destroy = 0,					\
@@ -155,42 +149,8 @@ struct starpu_task_list {
 	.starpu_private = NULL				\
 };
 
-/*
- * handle task dependencies: it is possible to associate a task with a unique
- * "tag" and to express dependencies between tasks by the means of those tags
- *
- * To do so, fill the tag_id field with a tag number (can be arbitrary) and set
- * use_tag to 1.
- *
- * If starpu_tag_declare_deps is called with that tag number, the task will not
- * be started until the task which wears the declared dependency tags are
- * complete.
- */
-
-/*
- * WARNING ! use with caution ...
- *  In case starpu_tag_declare_deps is passed constant arguments, the caller
- *  must make sure that the constants are casted to starpu_tag_t. Otherwise,
- *  due to integer sizes and argument passing on the stack, the C compiler
- *  might consider the tag *  0x200000003 instead of 0x2 and 0x3 when calling:
- *      "starpu_tag_declare_deps(0x1, 2, 0x2, 0x3)"
- *  Using starpu_tag_declare_deps_array is a way to avoid this problem.
- */
-/* make id depend on the list of ids */
-void starpu_tag_declare_deps(starpu_tag_t id, unsigned ndeps, ...);
-void starpu_tag_declare_deps_array(starpu_tag_t id, unsigned ndeps, starpu_tag_t *array);
-
 /* task depends on the tasks in task array */
 void starpu_task_declare_deps_array(struct starpu_task *task, unsigned num_events, starpu_event * events);
-
-int starpu_tag_wait(starpu_tag_t id);
-int starpu_tag_wait_array(unsigned ntags, starpu_tag_t *id);
-
-/* The application can feed a tag explicitely */
-void starpu_tag_notify_from_apps(starpu_tag_t id);
-
-/* To release resources, tags should be freed after use */
-void starpu_tag_remove(starpu_tag_t id);
 
 /* Initialize a task structure with default values. */
 void starpu_task_init(struct starpu_task *task);
@@ -215,6 +175,9 @@ struct starpu_task *starpu_task_create(void);
  * allocated task results in an undefined behaviour. */
 void starpu_task_destroy(struct starpu_task *task);
 int starpu_task_submit(struct starpu_task *task, starpu_event *event);
+
+/* Add dependencies to "num_events" events in "events" array, then submit the task */
+int starpu_task_submit_ex(struct starpu_task *task, int num_events, starpu_event *events, starpu_event *event);
 
 /* This function waits until all the tasks that were already submitted have
  * been executed. */

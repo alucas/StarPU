@@ -29,18 +29,17 @@
 					| (unsigned long long)(i))))
 
 static unsigned no_prio = 0;
+static starpu_event *events;
+#define EVENT(x,y) events[x*nblocks+y]
 
 /*
  *	Construct the DAG
  */
 
-static struct starpu_task *create_task(starpu_tag_t id)
+static struct starpu_task *create_task()
 {
-	struct starpu_task *task = starpu_task_create();
-		task->cl_arg = NULL;
-
-	task->use_tag = 1;
-	task->tag_id = id;
+   struct starpu_task *task = starpu_task_create();
+   task->cl_arg = NULL;
 
 	return task;
 }
@@ -50,7 +49,7 @@ static void create_task_pivot(starpu_data_handle *dataAp, unsigned nblocks,
 					unsigned k, unsigned i,
 					starpu_data_handle (* get_block)(starpu_data_handle *, unsigned, unsigned, unsigned))
 {
-	struct starpu_task *task = create_task(PIVOT(k, i));
+	struct starpu_task *task = create_task();
 
 	task->cl = &cl_pivot;
 
@@ -66,12 +65,13 @@ static void create_task_pivot(starpu_data_handle *dataAp, unsigned nblocks,
 
 	/* enforce dependencies ... */
 	if (k == 0) {
-		starpu_tag_declare_deps(PIVOT(k, i), 1, TAG11(k));
+		starpu_task_declare_deps_array(task, 1, &EVENT(k,k));
 	}
 	else 
 	{
 		if (i > k) {
-			starpu_tag_declare_deps(PIVOT(k, i), 2, TAG11(k), TAG22(k-1, i, k));
+         starpu_event deps[] = {EVENT(k,k), EVENT(i,k)};
+         starpu_task_declare_deps_array(task, 2, deps);
 		}
 		else {
 			starpu_tag_t *tags = malloc((nblocks - k)*sizeof(starpu_tag_t));
@@ -91,11 +91,11 @@ static void create_task_pivot(starpu_data_handle *dataAp, unsigned nblocks,
 	starpu_task_submit(task, NULL);
 }
 
-static struct starpu_task *create_task_11_pivot(starpu_data_handle *dataAp, unsigned nblocks,
+static void create_task_11_pivot(starpu_data_handle *dataAp, unsigned nblocks,
 					unsigned k, struct piv_s *piv_description,
 					starpu_data_handle (* get_block)(starpu_data_handle *, unsigned, unsigned, unsigned))
 {
-	struct starpu_task *task = create_task(TAG11(k));
+	struct starpu_task *task = create_task();
 
 	task->cl = &cl11_pivot;
 
@@ -110,11 +110,9 @@ static struct starpu_task *create_task_11_pivot(starpu_data_handle *dataAp, unsi
 		task->priority = STARPU_MAX_PRIO;
 
 	/* enforce dependencies ... */
-	if (k > 0) {
-		starpu_tag_declare_deps(TAG11(k), 1, TAG22(k-1, k, k));
-	}
-
-	return task;
+   starpu_event old = EVENT(k,k);
+   starpu_task_submit_ex(task, &, &old, &EVENT(k,k));
+   starpu_event_release(old);
 }
 
 static void create_task_12(starpu_data_handle *dataAp, unsigned nblocks, unsigned k, unsigned j,
@@ -223,10 +221,13 @@ static double dw_codelet_facto_pivot(starpu_data_handle *dataAp,
 	struct timeval start;
 	struct timeval end;
 
-	struct starpu_task *entry_task = NULL;
-
 	/* create all the DAG nodes */
 	unsigned i,j,k;
+
+   starpu_event first_event = starpu_event_create();
+   starpu_event *events = malloc(sizeof(starpu_event) * nblocks *nblocks);
+   EVENT(0,0) = first_event;
+   starpu_event_retain(first_event);
 
 	for (k = 0; k < nblocks; k++)
 	{

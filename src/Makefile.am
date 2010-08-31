@@ -54,9 +54,6 @@ libstarpu_la_LDFLAGS = $(ldflags) -version-number 0:0:0 -no-undefined
 
 noinst_HEADERS = 						\
 	core/dependencies/data_concurrency.h			\
-	core/dependencies/cg.h					\
-	core/dependencies/tags.h				\
-	core/dependencies/htable.h				\
 	core/dependencies/implicit_data_deps.h			\
 	core/policies/eager_central_priority_policy.h		\
 	core/policies/sched_policy.h				\
@@ -128,12 +125,8 @@ libstarpu_la_SOURCES = 						\
 	core/event.c						\
 	core/errorcheck.c					\
 	core/progress_hook.c					\
-	core/dependencies/cg.c					\
-	core/dependencies/dependencies.c			\
 	core/dependencies/implicit_data_deps.c			\
-	core/dependencies/tags.c				\
 	core/dependencies/task_deps.c				\
-	core/dependencies/htable.c				\
 	core/dependencies/data_concurrency.c			\
 	core/mechanisms/stack_queues.c				\
 	core/mechanisms/deque_queues.c				\
@@ -178,7 +171,6 @@ libstarpu_la_SOURCES = 						\
 	datawizard/interfaces/variable_interface.c		\
 	util/malloc.c						\
 	util/execute_on_all.c					\
-	util/starpu_create_sync_task.c				\
 	util/starpu_cublas.c					\
 	util/file.c						\
 	util/starpu_insert_task.c				\
