@@ -65,8 +65,6 @@ void starpu_task_init(struct starpu_task *task)
 
 	task->status = STARPU_TASK_INVALID;
 
-	task->profiling_info = NULL;
-
 	task->predicted = -1.0;
 
 	task->starpu_private = NULL;
@@ -77,13 +75,6 @@ void starpu_task_init(struct starpu_task *task)
 void starpu_task_deinit(struct starpu_task *task)
 {
 	STARPU_ASSERT(task);
-
-	/* If a buffer was allocated to store the profiling info, we free it. */
-	if (task->profiling_info)
-	{
-		free(task->profiling_info);
-		task->profiling_info = NULL;
-	}
 
 	starpu_job_t j = (struct starpu_job_s *)task->starpu_private;
 
@@ -148,6 +139,12 @@ starpu_job_t _starpu_get_job_associated_to_task(struct starpu_task *task)
  * already counted. */
 int _starpu_submit_job(starpu_job_t j, unsigned do_not_increment_nsubmitted)
 {
+   if (_starpu_event_profiling_enabled(j->event)) {
+      struct timespec submit_time;
+      starpu_clock_gettime(&submit_time);
+      _starpu_event_profiling_submit_time_set(j->event, &submit_time);
+   }
+
 	j->terminated = 0;
 
 	if (!do_not_increment_nsubmitted)
@@ -190,18 +187,9 @@ int starpu_task_submit(struct starpu_task *task, starpu_event *event)
 		_starpu_detect_implicit_data_deps(task);
 	}
 
-	/* If profiling is activated, we allocate a structure to store the
-	 * appropriate info. */
-	struct starpu_task_profiling_info *info;
-	info = _starpu_allocate_profiling_info_if_needed();
-	task->profiling_info = info;
-
 	/* The task is considered as block until we are sure there remains not
 	 * dependency. */
 	task->status = STARPU_TASK_BLOCKED;
-	
-	if (info)
-		starpu_clock_gettime(&info->submit_time);
 
 	/* internally, StarPU manipulates a starpu_job_t which is a wrapper around a
 	* task structure, it is possible that this job structure was already

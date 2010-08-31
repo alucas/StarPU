@@ -27,6 +27,7 @@
 #include "driver_opencl_utils.h"
 #include <common/utils.h>
 #include <profiling/profiling.h>
+#include <core/event.h>
 
 static cl_context contexts[STARPU_MAXOPENCLDEVS];
 static cl_device_id devices[STARPU_MAXOPENCLDEVS];
@@ -441,10 +442,9 @@ static int _starpu_opencl_execute_job(starpu_job_t j, struct starpu_worker_s *ar
 
 	STARPU_TRACE_START_CODELET_BODY(j);
 
-	struct starpu_task_profiling_info *profiling_info;
-	profiling_info = task->profiling_info;
+   int event_prof = _starpu_event_profiling_enabled(j->event);
 
-	if (profiling_info || calibrate_model)
+	if (event_prof || calibrate_model)
 	{
 		starpu_clock_gettime(&codelet_start);
 		_starpu_worker_register_executing_start_date(workerid, &codelet_start);
@@ -459,7 +459,7 @@ static int _starpu_opencl_execute_job(starpu_job_t j, struct starpu_worker_s *ar
 
 	cl->per_worker_stats[workerid]++;
 
-	if (profiling_info || calibrate_model)
+	if (event_prof || calibrate_model)
 		starpu_clock_gettime(&codelet_end);
 
 	STARPU_TRACE_END_CODELET_BODY(j);
@@ -467,7 +467,7 @@ static int _starpu_opencl_execute_job(starpu_job_t j, struct starpu_worker_s *ar
 
 	_starpu_push_task_output(task, mask);
 
-	_starpu_driver_update_job_feedback(j, args, profiling_info, calibrate_model,
+	_starpu_driver_update_job_feedback(j, args, calibrate_model,
 							&codelet_start, &codelet_end);
 
 	return EXIT_SUCCESS;

@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 		task->cl = &dummy_codelet;
 		task->cl_arg = NULL;
 	
-		starpu_task_submit(task);
+		starpu_task_submit(task, NULL);
 	}
 
 	starpu_task_wait_for_all();

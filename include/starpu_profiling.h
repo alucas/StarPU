@@ -39,14 +39,6 @@ extern "C" {
 #define STARPU_PROFILING_DISABLE	0
 #define STARPU_PROFILING_ENABLE		1
 
-struct starpu_task_profiling_info {
-	struct timespec submit_time;
-	struct timespec start_time;
-	struct timespec end_time;
-	/* TODO add expected length, expected start/end ? */
-	int workerid;
-};
-
 /* The timing is provided since the previous call to starpu_worker_get_profiling_info */
 struct starpu_worker_profiling_info {
 	struct timespec start_time;

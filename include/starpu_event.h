@@ -29,6 +29,14 @@ int starpu_event_retain(starpu_event event);
 int starpu_event_wait(starpu_event);
 int starpu_event_wait_all(int num_events, starpu_event *events);
 
+/* Profiling
+ * These functions require that StarPU profiling is enabled
+ */
+void starpu_event_profiling_submit_time(starpu_event, struct timespec*);
+void starpu_event_profiling_start_time(starpu_event, struct timespec*);
+void starpu_event_profiling_end_time(starpu_event, struct timespec*);
+int starpu_event_profiling_worker_id(starpu_event);
+
 #ifdef __cplusplus
 }
 #endif

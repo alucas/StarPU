@@ -58,6 +58,10 @@ static void _do_starpu_bus_reset_profiling_info(struct starpu_bus_profiling_info
 /* Disabled by default */
 static int profiling = 0;
 
+int starpu_profiling_enabled() {
+   return profiling;
+}
+
 int starpu_profiling_status_set(int status)
 {
 	int prev_value = profiling;
@@ -104,27 +108,6 @@ void starpu_profiling_init(void)
 void starpu_profiling_terminate(void)
 {
 
-}
-
-/*
- *	Task profiling
- */
-
-struct starpu_task_profiling_info *_starpu_allocate_profiling_info_if_needed(void)
-{
-	struct starpu_task_profiling_info *info = NULL;
-
-	if (profiling)
-	{
-		info = calloc(1, sizeof(struct starpu_task_profiling_info));
-		STARPU_ASSERT(info);
-
-		starpu_timespec_clear(&info->submit_time);
-		starpu_timespec_clear(&info->start_time);
-		starpu_timespec_clear(&info->end_time);
-	}
-
-	return info;
 }
 
 /*

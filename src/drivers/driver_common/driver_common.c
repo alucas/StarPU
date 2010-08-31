@@ -20,27 +20,30 @@
 #include <profiling/profiling.h>
 #include <common/utils.h>
 #include <core/debug.h>
+#include <core/event.h>
 
 void _starpu_driver_update_job_feedback(starpu_job_t j, struct starpu_worker_s *worker_args,
-					struct starpu_task_profiling_info *profiling_info,
 					unsigned calibrate_model,
 					struct timespec *codelet_start, struct timespec *codelet_end)
 {
 	struct timespec measured_ts;
 	double measured;
 
-	if (profiling_info || calibrate_model)
+   int event_prof = _starpu_event_profiling_enabled(j->event);
+
+	if (event_prof || calibrate_model)
 	{
 		starpu_timespec_sub(codelet_end, codelet_start, &measured_ts);
 		measured = starpu_timing_timespec_to_us(&measured_ts);
 
-		if (profiling_info)
+		if (event_prof)
 		{
-			memcpy(&profiling_info->start_time, codelet_start, sizeof(struct timespec));
-			memcpy(&profiling_info->end_time, codelet_end, sizeof(struct timespec));
+         _starpu_event_profiling_start_time_set(j->event, codelet_start);
+         _starpu_event_profiling_end_time_set(j->event, codelet_end);
 
 			int workerid = worker_args->workerid;
-			profiling_info->workerid = workerid;
+
+         _starpu_event_profiling_worker_id_set(j->event, workerid);
 			
 			_starpu_worker_update_profiling_info_executing(workerid, &measured_ts, 1);
 		}
