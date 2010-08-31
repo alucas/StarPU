@@ -25,8 +25,6 @@ static struct starpu_task *create_task(starpu_tag_t id)
 {
 	struct starpu_task *task = starpu_task_create();
 		task->cl_arg = NULL;
-		task->use_tag = 1;
-		task->tag_id = id;
 
 	return task;
 }
