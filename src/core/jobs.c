@@ -145,47 +145,31 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 
 	STARPU_TRACE_TASK_DONE(j);
 
-   _starpu_event_complete(j->event);
-
 	/* NB: we do not save those values before the callback, in case the
 	 * application changes some parameters eventually (eg. a task may not
 	 * be generated if the application is terminated). */
 	int destroy = task->destroy;
-	int detach = task->detach;
 	int regenerate = task->regenerate;
 
-	if (!detach)
-	{
-		/* we do not desallocate the job structure if some is going to
-		 * wait after the task */
-		if (!job_is_already_locked)
-			PTHREAD_MUTEX_LOCK(&j->sync_mutex);
-		/* A value of 2 is put to specify that not only the codelet but
-		 * also the callback were executed. */
-		j->terminated = 2;
-		PTHREAD_COND_BROADCAST(&j->sync_cond);
-
-		if (!job_is_already_locked)
-			PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
-	}
-	else {
-		/* no one is going to synchronize with that task so we release
-		 * the data structures now. In case the job was already locked
-		 * by the caller, it is its responsability to destroy the task.
-		 * */
-		if (!job_is_already_locked && destroy)
-			starpu_task_destroy(task);
-	}
+   if (!regenerate)
+      _starpu_event_complete(j->event);
 
 	if (regenerate)
 	{
-		STARPU_ASSERT(detach && !destroy && !task->synchronous);
+		STARPU_ASSERT(!destroy && !task->synchronous);
 
 		/* We reuse the same job structure */
 		int ret = _starpu_submit_job(j, 1);
 		STARPU_ASSERT(!ret);
 	}	
 	else {
+		/* The task is no longer used so we release it.
+		 * In case the job was already locked by the caller, it is
+       * its responsability to destroy the task.
+		 * */
+		if (!job_is_already_locked && destroy)
+			starpu_task_destroy(task);
+
 		_starpu_decrement_nsubmitted_tasks();
 	}
 

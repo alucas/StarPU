@@ -72,7 +72,6 @@ static void increment_handle(struct thread_data *thread_data)
 	task->cl_arg = thread_data;
 
 	task->destroy = 1;
-	task->detach = 0;
 
    starpu_event event;
 

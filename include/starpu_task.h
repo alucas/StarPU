@@ -104,15 +104,8 @@ struct starpu_task {
 	unsigned execute_on_a_specific_worker;
 	unsigned workerid;
 
-	/* If this flag is set, it is not possible to synchronize with the task
-	 * by the means of starpu_task_wait later on. Internal data structures
-	 * are only garanteed to be freed once starpu_task_wait is called if
-	 * that flag is not set. */
-	int detach;
-
 	/* If that flag is set, the task structure will automatically be freed,
-	 * either after the execution of the callback if the task is detached,
-	 * or during starpu_task_wait otherwise. If this flag is not set,
+	 * either after the execution of the callback. If this flag is not set,
 	 * dynamically allocated data structures will not be freed until
 	 * starpu_task_destroy is called explicitely. Setting this flag for a
 	 * statically allocated task structure will result in undefined
@@ -157,7 +150,6 @@ struct starpu_task_list {
 	.use_tag = 0,					\
 	.synchronous = 0,				\
 	.execute_on_a_specific_worker = 0,		\
-	.detach = 1,					\
 	.destroy = 0,					\
 	.regenerate = 0,				\
 	.status = STARPU_TASK_INVALID,			\

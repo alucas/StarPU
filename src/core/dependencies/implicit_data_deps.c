@@ -336,7 +336,6 @@ int _starpu_data_wait_until_available(starpu_data_handle handle, starpu_access_m
 	{
 		struct starpu_task *sync_task;
 		sync_task = starpu_task_create();
-		sync_task->detach = 0;
 		sync_task->destroy = 1;
 
 		/* It is not really a RW access, but we want to make sure that

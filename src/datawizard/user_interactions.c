@@ -129,12 +129,10 @@ int starpu_data_acquire_cb(starpu_data_handle handle,
 	if (sequential_consistency)
 	{
 		wrapper->pre_sync_task = starpu_task_create();
-		wrapper->pre_sync_task->detach = 1;
 		wrapper->pre_sync_task->callback_func = starpu_data_acquire_cb_pre_sync_callback;
 		wrapper->pre_sync_task->callback_arg = wrapper;
 
 		wrapper->post_sync_task = starpu_task_create();
-		wrapper->post_sync_task->detach = 1;
 
 		_starpu_detect_implicit_data_deps_with_handle(wrapper->pre_sync_task, wrapper->post_sync_task, handle, mode);
 		PTHREAD_MUTEX_UNLOCK(&handle->sequential_consistency_mutex);
@@ -197,10 +195,8 @@ int starpu_data_acquire(starpu_data_handle handle, starpu_access_mode mode)
 	if (sequential_consistency)
 	{
 		wrapper.pre_sync_task = starpu_task_create();
-		wrapper.pre_sync_task->detach = 0;
 
 		wrapper.post_sync_task = starpu_task_create();
-		wrapper.post_sync_task->detach = 1;
 
 		_starpu_detect_implicit_data_deps_with_handle(wrapper.pre_sync_task, wrapper.post_sync_task, handle, mode);
 		PTHREAD_MUTEX_UNLOCK(&handle->sequential_consistency_mutex);

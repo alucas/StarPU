@@ -83,7 +83,6 @@ static void create_task_grid(unsigned iter)
 		task->use_tag = 1;
 		task->tag_id = TAG(i, iter);
 
-		task->detach = 1;
 		task->destroy = 0;
 
 		if (i != 0)
