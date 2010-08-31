@@ -21,35 +21,31 @@
 int main(int argc, char **argv)
 {
 	int i, ret;
-   starpu_event event;
 
 	starpu_init(NULL);
 
-	struct starpu_task **tasks = malloc(N*sizeof(struct starpu_task *));
+	starpu_event user_event, event;
+   user_event = starpu_event_create();
+   starpu_event_retain(user_event);
+   event = user_event;
 
 	for (i = 0; i < N; i++)
 	{
-		tasks[i] = starpu_task_create();
-		tasks[i]->cl = NULL;
+      struct starpu_task * task;
+		task = starpu_task_create();
+		task->cl = NULL;
 
-		if (i > 0)
-			starpu_task_declare_deps_array(tasks[i], 1, &tasks[i-1]);
+      starpu_task_declare_deps_array(task, 1, &event);
+      starpu_event_release(event);
 
-      if (i != (N-1)) {
-         ret = starpu_task_submit(tasks[i], NULL);
-      }
-      else {
-         ret = starpu_task_submit(tasks[i], &event);
-      }
-
+      ret = starpu_task_submit(task, &event);
       STARPU_ASSERT(!ret);
 	}
 
-	ret = starpu_task_submit(tasks[0], NULL);
-	STARPU_ASSERT(!ret);
+   starpu_event_trigger(user_event);
 
-	starpu_event_wait(event);
-   starpu_event_release(event);
+	starpu_event_wait(user_event);
+   starpu_event_release(user_event);
 
 	starpu_shutdown();
 
