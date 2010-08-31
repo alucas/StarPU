@@ -100,7 +100,7 @@ void _starpu_detect_implicit_data_deps_with_handle(struct starpu_task *pre_sync_
 				}
 				_STARPU_DEP_DEBUG("%d readers\n", nreaders);
 
-				starpu_event *events[nreaders];
+				starpu_event events[nreaders];
 
 				unsigned i = 0;
 				l = handle->last_submitted_readers;
