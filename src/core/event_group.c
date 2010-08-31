@@ -14,30 +14,27 @@
  * See the GNU Lesser General Public License in COPYING.LGPL for more details.
  */
 
-#ifndef __TRIGGER_H__
-#define __TRIGGER_H__
+#include <core/event.h>
+#include <core/trigger.h>
 
-#include <starpu_event.h>
+static void trigger_callback(void*);
 
-typedef struct starpu_trigger_t * starpu_trigger;
+starpu_event starpu_event_group_create(int num_events, starpu_event *events) {
+   starpu_event event = _starpu_event_create();
+   starpu_event_retain(event);
 
-struct starpu_trigger_t {
-   void * data;
-   void (*callback)(void*);
-   int dep_count;
+   starpu_trigger trigger = _starpu_trigger_create(&trigger_callback, event);
 
-   int enabled;
-   int allocated;
-};
+   _starpu_trigger_events_register(trigger, num_events, events);
 
-starpu_trigger _starpu_trigger_create(void (*callback)(void*), void*data);
+   _starpu_trigger_enable(trigger);
 
-void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void *data);
+   return event;
+}
 
-void _starpu_trigger_events_register(starpu_trigger, int num_events, starpu_event *events);
+static void trigger_callback(void*data) {
+   starpu_event event = (starpu_event)data;
 
-void _starpu_trigger_enable(starpu_trigger trigger);
-
-void _starpu_trigger_signal(starpu_trigger trigger);
-
-#endif // __TRIGGER_H__
+   _starpu_event_complete(event);
+   _starpu_event_release_private(event);
+}
