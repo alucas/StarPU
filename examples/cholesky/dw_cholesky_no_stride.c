@@ -59,7 +59,7 @@ static struct starpu_task * create_task_11(unsigned k, unsigned nblocks)
 {
 //	printf("task 11 k = %d TAG = %llx\n", k, (TAG11(k)));
 
-	struct starpu_task *task = create_task(TAG11(k));
+	struct starpu_task *task = create_task();
 	
 	task->cl = &cl11;
 
@@ -93,7 +93,7 @@ static starpu_codelet cl21 =
 
 static struct starpu_task * create_task_21(unsigned k, unsigned j)
 {
-	struct starpu_task *task = create_task(TAG21(k, j));
+	struct starpu_task *task = create_task();
 
 	task->cl = &cl21;	
 
@@ -132,7 +132,7 @@ static struct starpu_task * create_task_22(unsigned k, unsigned i, unsigned j)
 {
 //	printf("task 22 k,i,j = %d,%d,%d TAG = %llx\n", k,i,j, TAG22(k,i,j));
 
-	struct starpu_task *task = create_task(TAG22(k, i, j));
+	struct starpu_task *task = create_task();
 
 	task->cl = &cl22;
 

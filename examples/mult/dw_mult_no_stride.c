@@ -302,7 +302,7 @@ static void submit_new_iter(unsigned x, unsigned y, unsigned iter)
 		task = construct_task(x, y, z, iter);
 		
 		if (event != NULL) {
-			starpu_task_declare_deps(task, 1, &event);
+			starpu_task_declare_deps_array(task, 1, &event);
          starpu_event_release(event);
 		}
 
