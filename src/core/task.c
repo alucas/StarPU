@@ -227,11 +227,15 @@ int starpu_task_submit(struct starpu_task *task, starpu_event *event)
       starpu_event_retain(j->event);
    }
 
-   _starpu_event_retain_private(j->event);
+   if (is_sync)
+      _starpu_event_retain_private(j->event);
+
 	ret = _starpu_submit_job(j, 0);
 
-	if (is_sync)
-		_starpu_wait_job(j);
+	if (is_sync) {
+		starpu_event_wait(j->event);
+      _starpu_event_release_private(j->event);
+   }
 
 	return ret;
 }
