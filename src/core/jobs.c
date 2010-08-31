@@ -63,6 +63,7 @@ starpu_job_t __attribute__((malloc)) _starpu_job_create(struct starpu_task *task
 
 	job->task = task;
    job->event = _starpu_event_create();
+   _starpu_event_retain_private(job->event);
 
 	job->footprint_is_computed = 0;
 	job->submitted = 0;
@@ -92,6 +93,7 @@ void _starpu_job_destroy(starpu_job_t j)
 
 	_starpu_cg_list_deinit(&j->job_successors);
 
+   _starpu_event_release_private(j->event);
 	starpu_job_delete(j);
 }
 
@@ -125,9 +127,6 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 	/* in case there are dependencies, wake up the proper tasks */
 	j->submitted = 0;
 	_starpu_notify_dependencies(j);
-
-   _starpu_event_complete(j->event);
-   _starpu_event_release_private(j->event);
 
 	/* We must have set the j->terminated flag early, so that it is
 	 * possible to express task dependencies within the callback
@@ -163,6 +162,8 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 	}
 
 	STARPU_TRACE_TASK_DONE(j);
+
+   _starpu_event_complete(j->event);
 
 	/* NB: we do not save those values before the callback, in case the
 	 * application changes some parameters eventually (eg. a task may not
@@ -205,6 +206,7 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 	else {
 		_starpu_decrement_nsubmitted_tasks();
 	}
+
 }
 
 /* This function is called when a new task is submitted to StarPU 
