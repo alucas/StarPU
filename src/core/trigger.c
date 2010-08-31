@@ -20,33 +20,20 @@
 #include <starpu_event.h>
 #include <core/event.h>
 
-struct starpu_trigger_t {
-   void * data;
-   void (*callback)(starpu_trigger, void*);
-   int dep_count;
-   starpu_event event;
 
-   int enabled;
-};
-
-void _starpu_trigger_init(starpu_trigger trigger, int num_events, starpu_event * events, void (*callback)(starpu_trigger, void*), void *data, starpu_event *event) {
+void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void *data) {
 
    trigger->data = data;
    trigger->callback = callback;
-   trigger->dep_count = num_events+1;
+   /* The "+1" is used to enable this trigger */
+   trigger->dep_count = 1;
    trigger->enabled = 0;
-
-   if (event != NULL) {
-      starpu_event ev = _starpu_event_create();
-      *event = ev;
-      trigger->event = ev;
-   }
-
-   _starpu_trigger_events_register(trigger, num_events, events);
 }
 
 void _starpu_trigger_events_register(starpu_trigger trigger, int num_events, starpu_event *events) {
    assert(!trigger->enabled);
+
+   __sync_fetch_and_add(&trigger->dep_count, num_events);
 
    int i;
    for (i=0; i<num_events; i++)
@@ -55,15 +42,13 @@ void _starpu_trigger_events_register(starpu_trigger trigger, int num_events, sta
 
 void _starpu_trigger_enable(starpu_trigger trigger) {
    assert(!trigger->enabled);
+
    _starpu_trigger_signal(trigger);
+   trigger->enabled = 1;
 }
 
 void _starpu_trigger_signal(starpu_trigger trigger) {
    int dep_count =__sync_sub_and_fetch(&trigger->dep_count, 1);
-   if (dep_count == 0) {
-      if (trigger->event != NULL)
-         _starpu_event_complete(trigger->event);
-      _starpu_event_release_private(trigger->event);
-      trigger->callback(trigger, trigger->data);
-   }
+   if (dep_count == 0)
+      trigger->callback(trigger->data);
 }

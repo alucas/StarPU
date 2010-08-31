@@ -19,6 +19,7 @@
 #include <core/workers.h>
 #include <core/jobs.h>
 #include <core/event.h>
+#include <core/trigger.h>
 #include <core/task.h>
 #include <common/config.h>
 #include <common/utils.h>
@@ -144,6 +145,9 @@ int _starpu_submit_job(starpu_job_t j, unsigned do_not_increment_nsubmitted)
       starpu_clock_gettime(&submit_time);
       _starpu_event_profiling_submit_time_set(j->event, &submit_time);
    }
+
+   /* Enable job trigger. From now, no new dependency can be added */
+   _starpu_trigger_enable(&j->trigger);
 
 	j->terminated = 0;
 
@@ -306,3 +310,5 @@ void _starpu_set_current_task(struct starpu_task *task)
 {
 	pthread_setspecific(current_task_key, task);
 }
+
+

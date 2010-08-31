@@ -24,6 +24,8 @@
 #include <common/config.h>
 #include <common/utils.h>
 
+void _starpu_job_trigger_callback(void*);
+
 size_t _starpu_job_get_data_size(starpu_job_t j)
 {
 	size_t size = 0;
@@ -64,6 +66,9 @@ starpu_job_t __attribute__((malloc)) _starpu_job_create(struct starpu_task *task
 	job->task = task;
    job->event = _starpu_event_create();
    _starpu_event_retain_private(job->event);
+
+   _starpu_trigger_init(&job->trigger, &_starpu_job_trigger_callback, job);
+   job->ready = 0;
 
 	job->footprint_is_computed = 0;
 	job->submitted = 0;
@@ -242,6 +247,10 @@ unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_alrea
 	if (_starpu_submit_job_enforce_data_deps(j))
 		return 0;
 
+   /* Dependencies enforced by job trigger */
+   if (!j->ready)
+      return 0;
+
 	ret = _starpu_push_task(j, job_is_already_locked);
 
 	return ret;
@@ -296,4 +305,13 @@ int _starpu_push_local_task(struct starpu_worker_s *worker, struct starpu_job_s 
 	_starpu_wake_all_blocked_workers_on_node(worker->memory_node);
 
 	return 0;
+}
+
+/* This function is called when the job trigger is triggered.
+ * That is, when all dependencies are fulfilled
+ */
+void _starpu_job_trigger_callback(void * data) {
+   starpu_job_t job = (starpu_job_t)data;
+
+   job->ready = 1;
 }
