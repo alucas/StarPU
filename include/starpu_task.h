@@ -115,8 +115,6 @@ struct starpu_task {
 
 	unsigned status;
 
-	struct starpu_task_profiling_info *profiling_info;
-
 	/* Predicted duration of the task. This field is only valid if the
 	 * scheduling strategy uses performance models. */
 	double predicted;
@@ -148,7 +146,6 @@ struct starpu_task {
 	.destroy = 0,					\
 	.regenerate = 0,				\
 	.status = STARPU_TASK_INVALID,			\
-	.profiling_info = NULL,				\
 	.predicted = -1.0,				\
 	.starpu_private = NULL				\
 };

@@ -24,6 +24,7 @@
 #include "driver_cuda.h"
 #include <core/sched_policy.h>
 #include <profiling/profiling.h>
+#include <core/event.h>
 
 /* the number of CUDA devices */
 static int ncudagpus;
@@ -113,10 +114,9 @@ static int execute_job_on_cuda(starpu_job_t j, struct starpu_worker_s *args)
 
 	STARPU_TRACE_START_CODELET_BODY(j);
 
-	struct starpu_task_profiling_info *profiling_info;
-	profiling_info = task->profiling_info;
+   int event_prof = _starpu_event_profiling_enabled(j->event);
 
-	if (profiling_info || calibrate_model)
+	if (event_prof || calibrate_model)
 	{
 		starpu_clock_gettime(&codelet_start);
 		_starpu_worker_register_executing_start_date(workerid, &codelet_start);
@@ -131,7 +131,7 @@ static int execute_job_on_cuda(starpu_job_t j, struct starpu_worker_s *args)
 
 	cl->per_worker_stats[workerid]++;
 
-	if (profiling_info || calibrate_model)
+	if (event_prof || calibrate_model)
 		starpu_clock_gettime(&codelet_end);
 
 	STARPU_TRACE_END_CODELET_BODY(j);	
@@ -139,8 +139,7 @@ static int execute_job_on_cuda(starpu_job_t j, struct starpu_worker_s *args)
 
 	_starpu_push_task_output(task, mask);
 
-	_starpu_driver_update_job_feedback(j, args, profiling_info, calibrate_model,
-			&codelet_start, &codelet_end);
+	_starpu_driver_update_job_feedback(j, args, calibrate_model, &codelet_start, &codelet_end);
 
 	return 0;
 }
