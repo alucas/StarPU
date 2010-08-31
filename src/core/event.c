@@ -25,6 +25,9 @@
 #include <profiling/profiling.h>
 
 struct starpu_event_t {
+   /* Indicates if it is a user event */
+   int user_event;
+
    /* Public reference counter */
    volatile int ref_count;
 
@@ -118,6 +121,18 @@ int starpu_event_test(starpu_event event) {
    return event->complete;
 }
 
+starpu_event starpu_event_create() {
+   starpu_event event = _starpu_event_create();
+   event->user_event = 1;
+   event->ref_count = 1;
+   event->ref_count_priv = 0;
+}
+
+void starpu_event_trigger(starpu_event event) {
+   assert(event->user_event);
+   _starpu_event_complete(event);
+}
+
 /* PRIVATE */
 
 int _starpu_event_lock(starpu_event event) {
@@ -136,6 +151,8 @@ starpu_event _starpu_event_create() {
    starpu_event ev;
 
    ev = malloc(sizeof(struct starpu_event_t));
+
+   ev->user_event = 0;
 
    ev->ref_count = 0;
    ev->ref_count_priv = 1;
