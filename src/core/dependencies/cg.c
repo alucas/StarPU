@@ -89,8 +89,7 @@ void _starpu_notify_cg(starpu_cg_t *cg)
 		cg->remaining = cg->ntags;
 
 		struct starpu_tag_s *tag;
-		struct starpu_cg_list_s *tag_successors, *job_successors;
-		starpu_job_t j;
+		struct starpu_cg_list_s *tag_successors;
 
 		/* the group is now completed */
 		switch (cg->cg_type) {
@@ -115,24 +114,6 @@ void _starpu_notify_cg(starpu_cg_t *cg)
 					tag_successors->ndeps_completed = 0;
 					_starpu_tag_set_ready(tag);
 				}
-				break;
-
-			case STARPU_CG_TASK:
-				j = cg->succ.job;
-
-				job_successors = &j->job_successors;
-
-				unsigned ndeps_completed =
-					STARPU_ATOMIC_ADD(&job_successors->ndeps_completed, 1);
-
-				if (job_successors->ndeps == ndeps_completed)
-				{
-					/* Note that this also ensures that tag deps are
-					 * fulfilled. This counter is reseted only when the
-					 * dependencies are are all fulfilled) */
-					_starpu_enforce_deps_and_schedule(j, 1);
-				}
-
 				break;
 
 			default:
@@ -164,33 +145,7 @@ void _starpu_notify_cg_list(struct starpu_cg_list_s *successors)
 			_starpu_spin_lock(&cgtag->lock);
 		}
 
-		if (cg_type == STARPU_CG_TASK)
-		{
-			starpu_job_t j = cg->succ.job;
-			PTHREAD_MUTEX_LOCK(&j->sync_mutex);
-		}			
-
 		_starpu_notify_cg(cg);
-
-		if (cg_type == STARPU_CG_TASK)
-		{
-			starpu_job_t j = cg->succ.job;
-			
-			/* In case this task was immediately terminated, since
-			 * _starpu_notify_cg_list already hold the sync_mutex
-			 * lock, it is its reponsability to destroy the task if
-			 * needed. */
-			unsigned must_destroy_task = 0;
-			struct starpu_task *task = j->task;
-
-			if ((j->terminated > 0) && task->destroy)
-				must_destroy_task = 1;
-
-			PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
-
-			if (must_destroy_task)
-				starpu_task_destroy(task);
-		}			
 
 		if (cg_type == STARPU_CG_APPS) {
 			/* Remove the temporary ref to the cg */

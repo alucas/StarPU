@@ -80,8 +80,6 @@ starpu_job_t __attribute__((malloc)) _starpu_job_create(struct starpu_task *task
 	job->exclude_from_dag = 0;
 #endif
 
-	_starpu_cg_list_init(&job->job_successors);
-
 	PTHREAD_MUTEX_INIT(&job->sync_mutex, NULL);
 	PTHREAD_COND_INIT(&job->sync_cond, NULL);
 
@@ -95,8 +93,6 @@ void _starpu_job_destroy(starpu_job_t j)
 {
 	PTHREAD_COND_DESTROY(&j->sync_cond);
 	PTHREAD_MUTEX_DESTROY(&j->sync_mutex);
-
-	_starpu_cg_list_deinit(&j->job_successors);
 
    _starpu_event_release_private(j->event);
 	starpu_job_delete(j);
@@ -182,34 +178,6 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 
 }
 
-static unsigned _starpu_not_all_task_deps_are_fulfilled(starpu_job_t j, unsigned job_is_already_locked)
-{
-	unsigned ret;
-
-	struct starpu_cg_list_s *job_successors = &j->job_successors;
-
-	if (!job_is_already_locked)
-		PTHREAD_MUTEX_LOCK(&j->sync_mutex);	
-
-	if (!j->submitted || (job_successors->ndeps != job_successors->ndeps_completed))
-	{
-		ret = 1;
-	}
-	else {
-		/* existing deps (if any) are fulfilled */
-		/* already prepare for next run */
-		job_successors->ndeps_completed = 0;
-		ret = 0;
-	}
-
-	if (!job_is_already_locked)
-		PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
-
-	return ret;
-}
-
-
-
 /*
  *	In order, we enforce tag, task and data dependencies. The task is
  *	passed to the scheduler only once all these constraints are fulfilled.
@@ -241,10 +209,6 @@ unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_alrea
       _starpu_spin_unlock(&tag->lock);
    }
 
-	/* enfore task dependencies */
-	if (_starpu_not_all_task_deps_are_fulfilled(j, job_is_already_locked))
-		return 0;
-
 	/* enforce data dependencies */
 	if (_starpu_submit_job_enforce_data_deps(j))
 		return 0;
@@ -263,9 +227,9 @@ unsigned _starpu_enforce_deps_starting_from_task(starpu_job_t j, unsigned job_is
 {
 	unsigned ret;
 
-	/* enfore task dependencies */
-	if (_starpu_not_all_task_deps_are_fulfilled(j, 0))
-		return 0;
+   /* Dependencies enforced by job trigger */
+   if (!j->ready)
+      return 0;
 
 	/* enforce data dependencies */
 	if (_starpu_submit_job_enforce_data_deps(j))
