@@ -69,7 +69,6 @@ LIST_TYPE(starpu_job,
 	starpu_mem_chunk_t scratch_memchunks[STARPU_NMAXBUFS];
 
 	struct starpu_tag_s *tag;
-	struct starpu_cg_list_s job_successors;
 
 	unsigned footprint_is_computed;
 	uint32_t footprint;
