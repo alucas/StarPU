@@ -98,24 +98,6 @@ void _starpu_job_destroy(starpu_job_t j)
 	starpu_job_delete(j);
 }
 
-void _starpu_wait_job(starpu_job_t j)
-{
-	STARPU_ASSERT(j->task);
-	STARPU_ASSERT(!j->task->detach);
-
-	PTHREAD_MUTEX_LOCK(&j->sync_mutex);
-
-	/* We wait for the flag to have a value of 2 which means that both the
-	 * codelet's implementation and its callback have been executed. That
-	 * way, _starpu_wait_job won't return until the entire task was really
-	 * executed (so that we cannot destroy the task while it is still being
-	 * manipulated by the driver). */
-	while (j->terminated != 2)
-		PTHREAD_COND_WAIT(&j->sync_cond, &j->sync_mutex);
-
-	PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
-}
-
 void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_locked)
 {
 	struct starpu_task *task = j->task;
