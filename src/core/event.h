@@ -54,6 +54,13 @@ int _starpu_event_release_private(starpu_event);
 int _starpu_event_trigger_register(starpu_event, starpu_trigger);
 
 /* Signal that the event occured */
-void _starpu_event_complete(starpu_event event);
+void _starpu_event_complete(starpu_event);
+
+/* Profiling */
+int _starpu_event_profiling_enabled(starpu_event);
+int _starpu_event_profiling_submit_time_set(starpu_event, struct timespec*);
+int _starpu_event_profiling_start_time_set(starpu_event, struct timespec*);
+int _starpu_event_profiling_end_time_set(starpu_event, struct timespec*);
+int _starpu_event_profiling_worker_id_set(starpu_event, int wid);
 
 #endif // __EVENT_H__

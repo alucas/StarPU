@@ -25,7 +25,6 @@
 #include <common/utils.h>
 
 void _starpu_driver_update_job_feedback(starpu_job_t j, struct starpu_worker_s *worker_args,
-		struct starpu_task_profiling_info *profiling_info,
 		unsigned calibrate_model,
 		struct timespec *codelet_start, struct timespec *codelet_end);
 
