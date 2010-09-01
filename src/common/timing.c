@@ -156,7 +156,7 @@ void starpu_clock_gettime(struct timespec *ts)
 }
 
 #else // !HAVE_CLOCK_GETTIME & no rdtsc
-#warning StarPU could not find a timer, clock will always return 0
+#pragma message "StarPU could not find a timer, clock will always return 0"
 void _starpu_timing_init(void)
 {
 }

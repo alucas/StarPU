@@ -91,7 +91,7 @@ unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_alrea
 unsigned _starpu_enforce_deps_starting_from_task(starpu_job_t j, unsigned job_is_already_locked);
 
 
-//#warning this must not be exported anymore ... 
+//FIXME this must not be exported anymore ... 
 //starpu_job_t _starpu_job_create(struct starpu_task *task);
 void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_locked);
 size_t _starpu_job_get_data_size(starpu_job_t j);

@@ -119,7 +119,7 @@ int starpu_data_acquire_cb(starpu_data_handle handle,
 	PTHREAD_MUTEX_INIT(&wrapper->lock, NULL);
 	wrapper->finished = 0;
 
-#warning TODO instead of having the is_prefetch argument, _starpu_fetch_data shoud consider two flags: async and detached
+//TODO: instead of having the is_prefetch argument, _starpu_fetch_data shoud consider two flags: async and detached
 	_starpu_spin_lock(&handle->header_lock);
 	handle->per_node[0].refcnt++;
 	_starpu_spin_unlock(&handle->header_lock);

@@ -42,14 +42,16 @@ if STARPU_USE_CUDA
 NVCCFLAGS += -Xcompiler -fPIC -Xlinker -fPIC
 
 cudaf_kernels.o: cudaf_kernels.cu
-	$(NVCC) $(AM_CPPFLAGS) $< -c -o $@ --compiler-options -fno-strict-aliasing  $(NVCCFLAGS) -I${includedir}
+	@echo "  NVCC  " $@
+	@$(NVCC) $(AM_CPPFLAGS) $< -c -o $@ --compiler-options -fno-strict-aliasing  $(NVCCFLAGS) -I${includedir}
 
 libstarpufft_la_SOURCES += cudaf_kernels.cu
 am_libstarpufft_la_OBJECTS = cudaf_kernels.o starpufftf.lo starpufft_common.lo
 
 if STARPU_HAVE_CUFFTDOUBLECOMPLEX
 cuda_kernels.o: cuda_kernels.cu
-	$(NVCC) $(AM_CPPFLAGS) $< -c -o $@ --compiler-options -fno-strict-aliasing  $(NVCCFLAGS) -I${includedir} -arch sm_13 
+	@echo "  NVCC  " $@
+	@$(NVCC) $(AM_CPPFLAGS) $< -c -o $@ --compiler-options -fno-strict-aliasing  $(NVCCFLAGS) -I${includedir} -arch sm_13 
 
 libstarpufft_la_SOURCES += cuda_kernels.cu
 am_libstarpufft_la_OBJECTS += cuda_kernels.o starpufft.lo 
