@@ -116,7 +116,7 @@ static struct starpu_deque_jobq_s *select_victimq(void)
 
 /* when anonymous threads submit tasks, 
  * we need to select a queue where to dispose them */
-static struct starpu_deque_jobq_s *select_workerq(void)
+/*static struct starpu_deque_jobq_s *select_workerq(void)
 {
 	struct starpu_deque_jobq_s *q;
 
@@ -125,11 +125,11 @@ static struct starpu_deque_jobq_s *select_workerq(void)
 	rr_worker = (rr_worker + 1 )%nworkers;
 
 	return q;
-}
+}*/
 
 #endif
 
-#warning TODO rewrite ... this will not scale at all now
+//TODO: rewrite ... this will not scale at all now
 static struct starpu_task *ws_pop_task(void)
 {
 	struct starpu_task *task;

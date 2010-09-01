@@ -388,7 +388,7 @@ static starpu_codelet STARPUFFT(twist3_1d_codelet) = {
 STARPUFFT(plan)
 STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 {
-	int workerid;
+	unsigned workerid;
 	int n1 = DIV_1D;
 	int n2 = n / n1;
 	int n3;
@@ -403,7 +403,7 @@ STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 	}
 #endif
 	STARPU_ASSERT(n == n1*n2);
-	STARPU_ASSERT(n1 < (1ULL << I_BITS));
+	STARPU_ASSERT((unsigned long long)n1 < (1ULL << I_BITS));
 
 	/* distribute the n2 second ffts into DIV_1D packages */
 	n3 = n2 / DIV_1D;
@@ -418,7 +418,7 @@ STARPUFFT(plan_dft_1d)(int n, int sign, unsigned flags)
 	plan->number = STARPU_ATOMIC_ADD(&starpufft_last_plan_number, 1) - 1;
 
 	/* The plan number has a limited size */
-	STARPU_ASSERT(plan->number < (1ULL << NUMBER_BITS));
+	STARPU_ASSERT((unsigned)plan->number < (1ULL << NUMBER_BITS));
 
 	/* Just one dimension */
 	plan->dim = 1;

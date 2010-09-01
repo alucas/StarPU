@@ -71,7 +71,7 @@ struct ppm_image *file_to_ppm(char *filename)
 
 	fread(ppm->data, sizeof(struct ppm_color), ppm->ncols*ppm->nlines, file);
 
-	unsigned i;
+	int i;
 	for (i = 0; i < ppm->ncols*ppm->nlines; i++)
 	{
 //		fprintf(stderr, "READ (index %d) -> r %d g %d b %d\n", i, ppm->data[i].r, ppm->data[i].g, ppm->data[i].b);
@@ -116,7 +116,7 @@ void dummy_downscale(struct ppm_image *input_ppm, struct ppm_image *output_ppm)
 	struct ppm_color *in = input_ppm->data;
 	struct ppm_color *out = output_ppm->data;
 
-	unsigned line, col;
+	int line, col;
 	for (line = 0; line < output_ppm->nlines; line++)
 	{
 		for (col = 0; col < output_ppm->ncols; col++)
