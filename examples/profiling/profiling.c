@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, "Avg. length : %2.2lf us\n", (length_sum)/niter);
 
 	/* Display the occupancy of all workers during the test */
-	int worker;
+	unsigned worker;
 	for (worker = 0; worker < starpu_worker_get_count(); worker++)
 	{
 		struct starpu_worker_profiling_info worker_info;
