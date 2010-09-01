@@ -78,7 +78,6 @@ check_PROGRAMS += 				\
 	core/starpu_task_wait			\
 	core/static_restartable			\
 	core/static_restartable_using_initializer\
-	core/static_restartable_tag		\
 	core/regenerate				\
 	core/wait_all_regenerable_tasks		\
 	core/subgraph_repeat			\
@@ -87,7 +86,6 @@ check_PROGRAMS += 				\
 	core/empty_task_sync_point		\
 	core/empty_task_sync_point_tasks	\
 	core/empty_task_chain			\
-	core/tag_wait_api			\
 	core/task_wait_api			\
 	core/declare_deps_in_callback		\
 	core/declare_deps_after_submission	\
@@ -145,9 +143,6 @@ core_static_restartable_SOURCES =		\
 core_static_restartable_using_initializer_SOURCES =		\
 	core/static_restartable_using_initializer.c
 
-core_static_restartable_tag_SOURCES =		\
-	core/static_restartable_tag.c
-
 core_regenerate_SOURCES =			\
 	core/regenerate.c
 
@@ -171,9 +166,6 @@ core_empty_task_sync_point_tasks_SOURCES =	\
 
 core_empty_task_chain_SOURCES =			\
 	core/empty_task_chain.c
-
-core_tag_wait_api_SOURCES =			\
-	core/tag_wait_api.c
 
 core_task_wait_api_SOURCES =			\
 	core/task_wait_api.c
