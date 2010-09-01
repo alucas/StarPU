@@ -43,7 +43,7 @@ static starpu_codelet dummy_codelet =
 
 void *thread_func(void *arg __attribute__((unused)))
 {
-	int i;
+	unsigned i;
 	for (i = 0; i < ntasks; i++)
 	{
 		struct starpu_task *task = starpu_task_create();
