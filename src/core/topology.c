@@ -231,7 +231,7 @@ static void _starpu_init_topology(struct starpu_machine_config_s *config)
 #elif defined(HAVE_SYSCONF)
 		topology->nhwcpus = sysconf(_SC_NPROCESSORS_ONLN);
 #else
-#warning no way to know number of cores, assuming 1
+#pragma message "no way to know number of cores, assuming 1"
 		topology->nhwcpus = 1;
 #endif
 
@@ -605,7 +605,7 @@ void _starpu_bind_thread_on_cpu(struct starpu_machine_config_s *config __attribu
 		STARPU_ABORT();
 	}
 #else
-#warning no CPU binding support
+#pragma message "no CPU binding support"
 #endif
 }
 

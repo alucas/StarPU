@@ -24,6 +24,7 @@
 #include <common/config.h>
 #include <core/workers.h>
 #include <common/utils.h>
+#include <common/common.h>
 
 #define MIN_LEVEL	(-5)
 #define MAX_LEVEL	(+5)
@@ -91,7 +92,7 @@ static void initialize_eager_center_priority_policy(struct starpu_machine_topolo
 		starpu_worker_set_sched_condition(workerid, &global_sched_cond, &global_sched_mutex);
 }
 
-static void deinitialize_eager_center_priority_policy(struct starpu_machine_topology_s *topology,
+static void deinitialize_eager_center_priority_policy(struct starpu_machine_topology_s *UNUSED(topology),
 		   __attribute__ ((unused)) struct starpu_sched_policy_s *_policy) 
 {
 	/* TODO check that there is no task left in the queue */

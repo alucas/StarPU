@@ -219,7 +219,8 @@ STARPUFFT(execute)(STARPUFFT(plan) plan, void *in, void *out)
 void
 STARPUFFT(destroy_plan)(STARPUFFT(plan) plan)
 {
-	int workerid, dim, i;
+	unsigned workerid;
+   int i, dim;
 
 	for (workerid = 0; workerid < starpu_worker_get_count(); workerid++) {
 		switch (starpu_worker_get_type(workerid)) {

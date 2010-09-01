@@ -40,7 +40,7 @@ void cpu_func(void *buffers[], void *cl_arg)
 
 int main(int argc, char **argv)
 {
-	unsigned i, j, n=1;
+	int i, j, n=1;
         int matrix[NX*NY];
 
         fprintf(stderr,"IN  Matrix: \n");

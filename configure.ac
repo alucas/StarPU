@@ -122,7 +122,7 @@ STARPU_CHECK_SYNC_LOCK_TEST_AND_SET
 # This defines HAVE_SYNC_SYNCHRONIZE
 STARPU_CHECK_SYNC_SYNCHRONIZE
 
-CPPFLAGS="${CPPFLAGS} -D_GNU_SOURCE "
+CPPFLAGS="${CPPFLAGS} -D_GNU_SOURCE -Wextra -Werror "
 
 AC_SEARCH_LIBS([set_mempolicy],[numa],[enable_libnuma=yes],[enable_libnuma=no])
 AC_MSG_CHECKING(whether libnuma is available)

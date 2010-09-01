@@ -336,7 +336,7 @@ void *gordon_worker_inject(struct starpu_worker_set_s *arg)
 		else {
 #ifndef NOCHAIN
 			int ret = 0;
-#warning we should look into the local job list here !
+//FIXME we should look into the local job list here !
 
 			struct starpu_job_list_s *list = _starpu_pop_every_task(STARPU_GORDON);
 			/* XXX 0 is hardcoded */
