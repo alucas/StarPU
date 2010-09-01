@@ -269,7 +269,7 @@ int _starpu_fetch_data_on_node(starpu_data_handle handle, uint32_t requesting_no
 			r->is_a_prefetch_request = 0;
 
 			/* transform that request into the proper access mode (prefetch could be read only) */
-#warning check that
+//FIXME check that
 			r->mode |= mode;
 		}
 

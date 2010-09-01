@@ -21,7 +21,7 @@
  *	Some useful functions
  */
 
-static struct starpu_task *create_task(starpu_tag_t id)
+static struct starpu_task *create_task()
 {
 	struct starpu_task *task = starpu_task_create();
 		task->cl_arg = NULL;
@@ -156,9 +156,6 @@ static struct starpu_task * create_task_22(starpu_data_handle dataA, unsigned k,
 
 static void _dw_cholesky_grain(float *matA, unsigned size, unsigned ld, unsigned nblocks, unsigned nbigblocks, unsigned reclevel)
 {
-	/* create a new codelet */
-	struct starpu_task *entry_task = NULL;
-
 	/* create all the DAG nodes */
 	unsigned i,j,k;
 

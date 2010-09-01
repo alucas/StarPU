@@ -15,6 +15,7 @@
  */
 
 #include <common/config.h>
+#include <common/common.h>
 #include <core/policies/deque_modeling_policy.h>
 #include <core/perfmodel/perfmodel.h>
 
@@ -159,8 +160,8 @@ static int dm_push_task(struct starpu_task *task)
 	return _dm_push_task(task, 0);
 }
 
-static void initialize_dm_policy(struct starpu_machine_topology_s *topology, 
-	 __attribute__ ((unused)) struct starpu_sched_policy_s *_policy) 
+static void initialize_dm_policy(struct starpu_machine_topology_s * topology, 
+	 struct starpu_sched_policy_s *UNUSED(_policy)) 
 {
 	nworkers = topology->nworkers;
 
@@ -176,7 +177,7 @@ static void initialize_dm_policy(struct starpu_machine_topology_s *topology,
 	}
 }
 
-static void deinitialize_dm_policy(struct starpu_machine_topology_s *topology, 
+static void deinitialize_dm_policy(struct starpu_machine_topology_s *UNUSED(topology), 
 	 __attribute__ ((unused)) struct starpu_sched_policy_s *_policy) 
 {
 	unsigned worker;

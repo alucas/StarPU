@@ -139,7 +139,7 @@ static void transfer_subtree_to_node(starpu_data_handle handle, unsigned src_nod
 			handle->per_node[src_node].state = STARPU_INVALID;
 			handle->per_node[dst_node].state = STARPU_OWNER;
 
-#warning we should use requests during memory reclaim
+//FIXME: we should use requests during memory reclaim
 			/* TODO use request !! */
 			handle->per_node[src_node].refcnt++;
 			handle->per_node[dst_node].refcnt++;
@@ -616,7 +616,7 @@ static size_t free_memory_on_node(starpu_mem_chunk_t mc, uint32_t node)
 //	while (_starpu_spin_trylock(&handle->header_lock))
 //		_starpu_datawizard_progress(_starpu_get_local_memory_node());
 
-#warning can we block here ?
+//FIXME: can we block here ?
 //	_starpu_spin_lock(&handle->header_lock);
 
 	if (mc->automatically_allocated && 

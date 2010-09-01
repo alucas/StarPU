@@ -361,7 +361,7 @@ static starpu_codelet STARPUFFT(twist3_2d_codelet) = {
 STARPUFFT(plan)
 STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 {
-	int workerid;
+	unsigned workerid;
 	int n1 = DIV_2D_N;
 	int n2 = n / n1;
 	int n3;
@@ -390,7 +390,7 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 	}
 #endif
 	STARPU_ASSERT(n == n1*n2);
-	STARPU_ASSERT(n1 < (1ULL << J_BITS));
+	STARPU_ASSERT((unsigned)n1 < (1ULL << J_BITS));
 
 
 #ifdef STARPU_USE_CUDA
@@ -401,7 +401,7 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 	}
 #endif
 	STARPU_ASSERT(m == m1*m2);
-	STARPU_ASSERT(m1 < (1ULL << J_BITS));
+	STARPU_ASSERT((unsigned)m1 < (1ULL << J_BITS));
 
 	/* distribute the n2*m2 second ffts into DIV_2D_N*DIV_2D_M packages */
 	n3 = n2 / DIV_2D_N;
@@ -418,7 +418,7 @@ STARPUFFT(plan_dft_2d)(int n, int m, int sign, unsigned flags)
 	plan->number = STARPU_ATOMIC_ADD(&starpufft_last_plan_number, 1) - 1;
 
 	/* 4bit limitation in the tag space */
-	STARPU_ASSERT(plan->number < (1ULL << NUMBER_BITS));
+	STARPU_ASSERT((unsigned)plan->number < (1ULL << NUMBER_BITS));
 
 	plan->dim = 2;
 	plan->n = malloc(plan->dim * sizeof(*plan->n));
