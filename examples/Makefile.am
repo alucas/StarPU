@@ -338,6 +338,9 @@ endif
 # Cholesky example #
 ####################
 
+#FIXME
+if FALSE
+
 if !NO_BLAS_LIB
 
 examplebin_PROGRAMS += 			\
@@ -362,6 +365,8 @@ cholesky_dw_cholesky_grain_SOURCES =		\
 	cholesky/dw_cholesky_models.c		\
 	cholesky/dw_cholesky_kernels.c		\
 	common/blas.c
+
+endif
 
 endif
 
@@ -418,6 +423,8 @@ endif
 # Heat example #
 ################
 
+#FIXME
+if FALSE
 if !NO_BLAS_LIB
 
 examplebin_PROGRAMS += heat/heat
@@ -435,11 +442,14 @@ heat_heat_SOURCES =				\
 	common/blas.c
 
 endif
+endif
 
 ################
 # Tag examples #
 ################
+#FIXME
 
+if FALSE
 check_PROGRAMS +=			\
 	tag_example/tag_example			\
 	tag_example/tag_example3			\
@@ -463,6 +473,8 @@ tag_example_tag_example3_SOURCES =		\
 
 tag_example_tag_restartable_SOURCES =		\
 	tag_example/tag_restartable.c
+
+endif # 0
 
 ################
 # SpMV example #
