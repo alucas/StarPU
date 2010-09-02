@@ -72,6 +72,7 @@ starpu_job_t __attribute__((malloc)) _starpu_job_create(struct starpu_task *task
 
 	job->footprint_is_computed = 0;
 	job->submitted = 0;
+	job->scheduled = 0;
 	job->terminated = 0;
 
 #ifdef STARPU_USE_FXT
@@ -174,23 +175,46 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 }
 
 /*
- *	The task is passed to the scheduler if it has no dependency left.
+ *	Schedule a job if it has no dependency left
+ * Returns:
+ *    - 1 if the task is scheduled
+ *    - 0 if the task isn't scheduled (some dependencies remain)
  */
-unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_already_locked)
+unsigned _starpu_may_schedule(starpu_job_t j)
 {
-	unsigned ret;
 
-   /* Dependencies enforced by job trigger */
-   if (!j->ready)
+   PTHREAD_MUTEX_LOCK(&j->sync_mutex);
+
+   if (j->scheduled) {
+      PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
       return 0;
+   }
 
-	/* enforce data dependencies */
-	if (_starpu_submit_job_enforce_data_deps(j))
+   /* Check events dependencies */
+   if (!j->ready) {
+      PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
+      return 0;
+   }
+
+	/* Check data dependencies */
+	if (_starpu_submit_job_enforce_data_deps(j)) {
+      PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
 		return 0;
+   }
 
-	ret = _starpu_push_task(j, job_is_already_locked);
+   /* We can schedule the task */
+	unsigned ret;
+   ret = _starpu_push_task(j, 1);
+   if (ret) {
+      PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
+		return 0;
+   }
 
-	return ret;
+   j->scheduled = 1;
+
+   PTHREAD_MUTEX_UNLOCK(&j->sync_mutex);
+
+	return 1;
 }
 
 struct starpu_job_s *_starpu_pop_local_task(struct starpu_worker_s *worker)
@@ -250,4 +274,5 @@ void _starpu_job_trigger_callback(void * data) {
 
    job->ready = 1;
 
+   _starpu_may_schedule(job);
 }

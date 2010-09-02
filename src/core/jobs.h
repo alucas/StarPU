@@ -70,6 +70,7 @@ LIST_TYPE(starpu_job,
 	unsigned footprint_is_computed;
 	uint32_t footprint;
 
+	unsigned scheduled;
 	unsigned submitted;
 	unsigned terminated;
 
@@ -87,9 +88,13 @@ void _starpu_job_destroy(starpu_job_t j);
 void _starpu_exclude_task_from_dag(struct starpu_task *task);
 #endif
 
-/* try to submit job j, enqueue it if it's not schedulable yet */
-unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_already_locked);
-unsigned _starpu_enforce_deps_starting_from_task(starpu_job_t j, unsigned job_is_already_locked);
+/*
+ *	Schedule a job if it has no dependency left
+ * Returns:
+ *    - 1 if the task is scheduled
+ *    - 0 if the task isn't scheduled (some dependencies remain)
+ */
+unsigned _starpu_may_schedule(starpu_job_t j);
 
 
 //FIXME this must not be exported anymore ... 
