@@ -27,165 +27,165 @@
 
 static int execute_job_on_cpu(starpu_job_t j, struct starpu_worker_s *cpu_args)
 {
-	int ret;
-	struct timespec codelet_start, codelet_end;
+   int ret;
+   struct timespec codelet_start, codelet_end;
 
-	unsigned calibrate_model = 0;
-	int workerid = cpu_args->workerid;
-	struct starpu_task *task = j->task;
-	struct starpu_codelet_t *cl = task->cl;
+   unsigned calibrate_model = 0;
+   int workerid = cpu_args->workerid;
+   struct starpu_task *task = j->task;
+   struct starpu_codelet_t *cl = task->cl;
 
-	STARPU_ASSERT(cl);
-	STARPU_ASSERT(cl->cpu_func);
+   STARPU_ASSERT(cl);
+   STARPU_ASSERT(cl->cpu_func);
 
-	if (cl->model && cl->model->benchmarking)
-		calibrate_model = 1;
+   if (cl->model && cl->model->benchmarking)
+      calibrate_model = 1;
 
-	ret = _starpu_fetch_task_input(task, 0);
+   ret = _starpu_fetch_task_input(task, 0);
 
-	if (ret != 0) {
-		/* there was not enough memory so the codelet cannot be executed right now ... */
-		/* push the codelet back and try another one ... */
-		return -EAGAIN;
-	}
+   if (ret != 0) {
+      /* there was not enough memory so the codelet cannot be executed right now ... */
+      /* push the codelet back and try another one ... */
+      return -EAGAIN;
+   }
 
-	STARPU_TRACE_START_CODELET_BODY(j);
+   STARPU_TRACE_START_CODELET_BODY(j);
 
    int event_prof = starpu_event_profiling_enabled(j->event);
 
-	if (event_prof || calibrate_model)
-	{
-		starpu_clock_gettime(&codelet_start);
-		_starpu_worker_register_executing_start_date(workerid, &codelet_start);
-	}
+   if (event_prof || calibrate_model)
+   {
+      starpu_clock_gettime(&codelet_start);
+      _starpu_worker_register_executing_start_date(workerid, &codelet_start);
+   }
 
-	cpu_args->status = STATUS_EXECUTING;
-	task->status = STARPU_TASK_RUNNING;	
+   cpu_args->status = STATUS_EXECUTING;
+   task->status = STARPU_TASK_RUNNING;	
 
-	cl_func func = cl->cpu_func;
-	func(task->interface, task->cl_arg);
+   cl_func func = cl->cpu_func;
+   func(task->interface, task->cl_arg);
 
-	cl->per_worker_stats[workerid]++;
-	
-	if (event_prof || calibrate_model)
-		starpu_clock_gettime(&codelet_end);
+   cl->per_worker_stats[workerid]++;
 
-	STARPU_TRACE_END_CODELET_BODY(j);
-	cpu_args->status = STATUS_UNKNOWN;
+   if (event_prof || calibrate_model)
+      starpu_clock_gettime(&codelet_end);
 
-	_starpu_push_task_output(task, 0);
+   STARPU_TRACE_END_CODELET_BODY(j);
+   cpu_args->status = STATUS_UNKNOWN;
 
-	_starpu_driver_update_job_feedback(j, cpu_args, calibrate_model,
-			&codelet_start, &codelet_end);
+   _starpu_push_task_output(task, 0);
 
-	return 0;
+   _starpu_driver_update_job_feedback(j, cpu_args, calibrate_model,
+         &codelet_start, &codelet_end);
+
+   return 0;
 }
 
 void *_starpu_cpu_worker(void *arg)
 {
-	struct starpu_worker_s *cpu_arg = arg;
-	unsigned memnode = cpu_arg->memory_node;
-	int workerid = cpu_arg->workerid;
-	int devid = cpu_arg->devid;
+   struct starpu_worker_s *cpu_arg = arg;
+   unsigned memnode = cpu_arg->memory_node;
+   int workerid = cpu_arg->workerid;
+   int devid = cpu_arg->devid;
 
 #ifdef STARPU_USE_FXT
-	_starpu_fxt_register_thread(cpu_arg->bindid);
+   _starpu_fxt_register_thread(cpu_arg->bindid);
 #endif
-	STARPU_TRACE_WORKER_INIT_START(STARPU_FUT_CPU_KEY, devid, memnode);
+   STARPU_TRACE_WORKER_INIT_START(STARPU_FUT_CPU_KEY, devid, memnode);
 
-	_starpu_bind_thread_on_cpu(cpu_arg->config, cpu_arg->bindid);
+   _starpu_bind_thread_on_cpu(cpu_arg->config, cpu_arg->bindid);
 
 #ifdef STARPU_VERBOSE
-        fprintf(stderr, "cpu worker %d is ready on logical cpu %d\n", devid, cpu_arg->bindid);
+   fprintf(stderr, "cpu worker %d is ready on logical cpu %d\n", devid, cpu_arg->bindid);
 #endif
 
-	_starpu_set_local_memory_node_key(&memnode);
+   _starpu_set_local_memory_node_key(&memnode);
 
-	_starpu_set_local_worker_key(cpu_arg);
+   _starpu_set_local_worker_key(cpu_arg);
 
-	snprintf(cpu_arg->name, 32, "CPU %d", devid);
+   snprintf(cpu_arg->name, 32, "CPU %d", devid);
 
-	cpu_arg->status = STATUS_UNKNOWN;
+   cpu_arg->status = STATUS_UNKNOWN;
 
-	STARPU_TRACE_WORKER_INIT_END
+   STARPU_TRACE_WORKER_INIT_END
 
-        /* tell the main thread that we are ready */
-	PTHREAD_MUTEX_LOCK(&cpu_arg->mutex);
-	cpu_arg->worker_is_initialized = 1;
-	PTHREAD_COND_SIGNAL(&cpu_arg->ready_cond);
-	PTHREAD_MUTEX_UNLOCK(&cpu_arg->mutex);
+      /* tell the main thread that we are ready */
+      PTHREAD_MUTEX_LOCK(&cpu_arg->mutex);
+   cpu_arg->worker_is_initialized = 1;
+   PTHREAD_COND_SIGNAL(&cpu_arg->ready_cond);
+   PTHREAD_MUTEX_UNLOCK(&cpu_arg->mutex);
 
-        starpu_job_t j;
-	int res;
+   starpu_job_t j;
+   int res;
 
-	while (_starpu_machine_is_running())
-	{
-		STARPU_TRACE_START_PROGRESS(memnode);
-		_starpu_datawizard_progress(memnode, 1);
-		STARPU_TRACE_END_PROGRESS(memnode);
+   while (_starpu_machine_is_running())
+   {
+      STARPU_TRACE_START_PROGRESS(memnode);
+      _starpu_datawizard_progress(memnode, 1);
+      STARPU_TRACE_END_PROGRESS(memnode);
 
-		_starpu_execute_registered_progression_hooks();
+      _starpu_execute_registered_progression_hooks();
 
-		PTHREAD_MUTEX_LOCK(cpu_arg->sched_mutex);
+      PTHREAD_MUTEX_LOCK(cpu_arg->sched_mutex);
 
-		/* perhaps there is some local task to be executed first */
-		j = _starpu_pop_local_task(cpu_arg);
+      /* perhaps there is some local task to be executed first */
+      j = _starpu_pop_local_task(cpu_arg);
 
-		/* otherwise ask a task to the scheduler */
-		if (!j)
-		{
-			struct starpu_task *task = _starpu_pop_task();
-			if (task)
-				j = _starpu_get_job_associated_to_task(task);
-		}
-		
-                if (j == NULL) 
-		{
-			if (_starpu_worker_can_block(memnode))
-				_starpu_block_worker(workerid, cpu_arg->sched_cond, cpu_arg->sched_mutex);
+      /* otherwise ask a task to the scheduler */
+      if (!j)
+      {
+         struct starpu_task *task = _starpu_pop_task();
+         if (task)
+            j = _starpu_get_job_associated_to_task(task);
+      }
 
-			PTHREAD_MUTEX_UNLOCK(cpu_arg->sched_mutex);
+      if (j == NULL) 
+      {
+         if (_starpu_worker_can_block(memnode))
+            _starpu_block_worker(workerid, cpu_arg->sched_cond, cpu_arg->sched_mutex);
 
-			continue;
-		};
-	
-		PTHREAD_MUTEX_UNLOCK(cpu_arg->sched_mutex);
-		
-		/* can a cpu perform that task ? */
-		if (!STARPU_CPU_MAY_PERFORM(j)) 
-		{
-			/* put it and the end of the queue ... XXX */
-			_starpu_push_task(j, 0);
-			continue;
-		}
+         PTHREAD_MUTEX_UNLOCK(cpu_arg->sched_mutex);
 
-		_starpu_set_current_task(j->task);
+         continue;
+      };
 
-                res = execute_job_on_cpu(j, cpu_arg);
+      PTHREAD_MUTEX_UNLOCK(cpu_arg->sched_mutex);
 
-		_starpu_set_current_task(NULL);
+      /* can a cpu perform that task ? */
+      if (!STARPU_CPU_MAY_PERFORM(j)) 
+      {
+         /* put it and the end of the queue ... XXX */
+         _starpu_push_task(j, 0);
+         continue;
+      }
 
-		if (res) {
-			switch (res) {
-				case -EAGAIN:
-					_starpu_push_task(j, 0);
-					continue;
-				default: 
-					assert(0);
-			}
-		}
+      _starpu_set_current_task(j->task);
 
-		_starpu_handle_job_termination(j, 0);
-        }
+      res = execute_job_on_cpu(j, cpu_arg);
 
-	STARPU_TRACE_WORKER_DEINIT_START
+      _starpu_set_current_task(NULL);
 
-	/* In case there remains some memory that was automatically
-	 * allocated by StarPU, we release it now. Note that data
-	 * coherency is not maintained anymore at that point ! */
-	_starpu_free_all_automatically_allocated_buffers(memnode);
+      if (res) {
+         switch (res) {
+            case -EAGAIN:
+               _starpu_push_task(j, 0);
+               continue;
+            default: 
+               assert(0);
+         }
+      }
 
-	STARPU_TRACE_WORKER_DEINIT_END(STARPU_FUT_CPU_KEY);
+      _starpu_handle_job_termination(j, 0);
+   }
 
-	pthread_exit(NULL);
+   STARPU_TRACE_WORKER_DEINIT_START
+
+      /* In case there remains some memory that was automatically
+       * allocated by StarPU, we release it now. Note that data
+       * coherency is not maintained anymore at that point ! */
+      _starpu_free_all_automatically_allocated_buffers(memnode);
+
+   STARPU_TRACE_WORKER_DEINIT_END(STARPU_FUT_CPU_KEY);
+
+   pthread_exit(NULL);
 }
