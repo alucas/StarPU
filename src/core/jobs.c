@@ -105,7 +105,6 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 
 	task->status = STARPU_TASK_FINISHED;
 
-	/* in case there are dependencies, wake up the proper tasks */
 	j->submitted = 0;
 
 	/* We must have set the j->terminated flag early, so that it is
@@ -149,6 +148,7 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
 	int destroy = task->destroy;
 	int regenerate = task->regenerate;
 
+	/* in case there are dependencies, wake up the proper tasks */
    if (!regenerate)
       _starpu_event_complete(j->event);
 
@@ -177,25 +177,6 @@ void _starpu_handle_job_termination(starpu_job_t j, unsigned job_is_already_lock
  *	The task is passed to the scheduler if it has no dependency left.
  */
 unsigned _starpu_enforce_deps_and_schedule(starpu_job_t j, unsigned job_is_already_locked)
-{
-	unsigned ret;
-
-	/* enforce data dependencies */
-	if (_starpu_submit_job_enforce_data_deps(j))
-		return 0;
-
-   /* Dependencies enforced by job trigger */
-   if (!j->ready)
-      return 0;
-
-	ret = _starpu_push_task(j, job_is_already_locked);
-
-	return ret;
-}
-
-/* Tag deps are already fulfilled */
-//FIXME: remove this
-unsigned _starpu_enforce_deps_starting_from_task(starpu_job_t j, unsigned job_is_already_locked)
 {
 	unsigned ret;
 
@@ -268,4 +249,5 @@ void _starpu_job_trigger_callback(void * data) {
    starpu_job_t job = (starpu_job_t)data;
 
    job->ready = 1;
+
 }
