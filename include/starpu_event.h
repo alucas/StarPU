@@ -39,6 +39,7 @@ void starpu_event_trigger(starpu_event);
 /* Profiling
  * These functions require that StarPU profiling is enabled
  */
+int starpu_event_profiling_enabled(starpu_event);
 void starpu_event_profiling_submit_time(starpu_event, struct timespec*);
 void starpu_event_profiling_start_time(starpu_event, struct timespec*);
 void starpu_event_profiling_end_time(starpu_event, struct timespec*);

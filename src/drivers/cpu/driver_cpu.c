@@ -51,7 +51,7 @@ static int execute_job_on_cpu(starpu_job_t j, struct starpu_worker_s *cpu_args)
 
 	STARPU_TRACE_START_CODELET_BODY(j);
 
-   int event_prof = _starpu_event_profiling_enabled(j->event);
+   int event_prof = starpu_event_profiling_enabled(j->event);
 
 	if (event_prof || calibrate_model)
 	{
