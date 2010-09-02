@@ -114,7 +114,7 @@ static int execute_job_on_cuda(starpu_job_t j, struct starpu_worker_s *args)
 
 	STARPU_TRACE_START_CODELET_BODY(j);
 
-   int event_prof = _starpu_event_profiling_enabled(j->event);
+   int event_prof = starpu_event_profiling_enabled(j->event);
 
 	if (event_prof || calibrate_model)
 	{

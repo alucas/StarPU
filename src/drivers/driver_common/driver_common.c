@@ -29,7 +29,7 @@ void _starpu_driver_update_job_feedback(starpu_job_t j, struct starpu_worker_s *
 	struct timespec measured_ts;
 	double measured;
 
-   int event_prof = _starpu_event_profiling_enabled(j->event);
+   int event_prof = starpu_event_profiling_enabled(j->event);
 
 	if (event_prof || calibrate_model)
 	{
