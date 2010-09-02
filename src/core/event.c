@@ -261,7 +261,7 @@ int _starpu_event_free(starpu_event event) {
    return 0;
 }
 
-int _starpu_event_profiling_enabled(starpu_event event) {
+int starpu_event_profiling_enabled(starpu_event event) {
    return event->profiling_enabled;
 }
 
