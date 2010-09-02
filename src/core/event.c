@@ -94,17 +94,21 @@ int starpu_event_wait(starpu_event event) {
 	if (STARPU_UNLIKELY(!_starpu_worker_may_perform_blocking_calls()))
 		return -EDEADLK;
 
-   _starpu_event_lock(event);
-   
-   event->cond_wait_count += 1;
+   /* We can avoid mutex locking if event is already complete */
+   if (!event->complete) {
 
-   while (!event->complete) {
-      pthread_cond_wait(&event->cond, &event->mutex);
+      _starpu_event_lock(event);
+      
+      event->cond_wait_count += 1;
+
+      while (!event->complete) {
+         pthread_cond_wait(&event->cond, &event->mutex);
+      }
+
+      event->cond_wait_count -= 1;
+
+      _starpu_event_unlock(event);
    }
-
-   event->cond_wait_count -= 1;
-
-   _starpu_event_unlock(event);
 
    return 0;
 }
@@ -209,22 +213,37 @@ int _starpu_event_release_private(starpu_event event) {
 
 /* Trigger registering */
 int _starpu_event_trigger_register(starpu_event event, starpu_trigger trigger) {
-   _starpu_event_lock(event);
+   int signal = 0;
 
+   /* If the event is complete, we can avoid a mutex lock/unlock */
    if (event->complete) {
-      /* we don't need to register because the event is complete */
-      _starpu_trigger_signal(trigger);
+      signal = 1;
    }
    else {
-      /* Register trigger */
-      if (event->trigger_count == event->trigger_size) {
-         event->triggers = realloc(event->triggers, 2 * event->trigger_size * sizeof(starpu_trigger));
+
+      _starpu_event_lock(event);
+
+      if (event->complete) {
+         /* we don't need to register because the event is complete */
+         signal = 1;
       }
-      event->triggers[event->trigger_count] = trigger;
-      event->trigger_count += 1;
+      else {
+         /* Register trigger */
+         if (event->trigger_count == event->trigger_size) {
+            event->trigger_size *= 2;
+            event->triggers = realloc(event->triggers, event->trigger_size * sizeof(starpu_trigger));
+         }
+         event->triggers[event->trigger_count] = trigger;
+         event->trigger_count += 1;
+      }
+
+      _starpu_event_unlock(event);
+
    }
 
-   _starpu_event_unlock(event);
+
+   if (signal)
+      _starpu_trigger_signal(trigger);
 
    return 0;
 }
@@ -257,6 +276,8 @@ int _starpu_event_free(starpu_event event) {
 
    pthread_mutex_destroy(&event->mutex);
    pthread_cond_destroy(&event->cond);
+
+   free(event->triggers);
 
    return 0;
 }
