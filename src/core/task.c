@@ -139,7 +139,7 @@ starpu_job_t _starpu_get_job_associated_to_task(struct starpu_task *task)
  * already counted. */
 int _starpu_submit_job(starpu_job_t j, unsigned do_not_increment_nsubmitted)
 {
-   if (_starpu_event_profiling_enabled(j->event)) {
+   if (starpu_event_profiling_enabled(j->event)) {
       struct timespec submit_time;
       starpu_clock_gettime(&submit_time);
       _starpu_event_profiling_submit_time_set(j->event, &submit_time);
