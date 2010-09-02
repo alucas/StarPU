@@ -58,7 +58,7 @@ LIST_TYPE(starpu_job,
    starpu_event event;
 
    struct starpu_trigger_t trigger;
-   int ready;
+   volatile int ready;
 
 	pthread_mutex_t sync_mutex;
 	pthread_cond_t sync_cond;
