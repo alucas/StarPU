@@ -59,13 +59,6 @@ int main(int argc, char **argv)
 		taskA = create_dummy_task();
 		taskB = create_dummy_task();
 
-		/* By default, dynamically allocated tasks are destroyed at
-		 * termination, we cannot declare a dependency on something
-		 * that does not exist anymore. */
-		taskA->destroy = 0;
-
-		/* we wait for the tasks explicitly */
-
       starpu_event eventA, eventB;
 
 		ret = starpu_task_submit(taskA, &eventA);
