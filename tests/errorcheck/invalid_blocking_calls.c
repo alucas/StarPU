@@ -16,10 +16,10 @@
 
 #include <starpu.h>
 
-#define TAG	0x42
-
 static starpu_data_handle handle;
 static unsigned data = 42;
+
+static starpu_event event;
 
 static void wrong_func(void *descr[], void *arg)
 {
@@ -31,7 +31,7 @@ static void wrong_func(void *descr[], void *arg)
 	if (ret != -EDEADLK)
 		exit(-1);
 
-	ret = starpu_tag_wait(TAG);
+	ret = starpu_event_wait(event);
 	if (ret != -EDEADLK)
 		exit(-1);
 }
@@ -54,7 +54,7 @@ static void wrong_callback(void *arg)
 	if (ret != -EDEADLK)
 		exit(-1);
 
-	ret = starpu_tag_wait(TAG);
+	ret = starpu_event_wait(event);
 	if (ret != -EDEADLK)
 		exit(-1);
 }
@@ -76,16 +76,13 @@ int main(int argc, char **argv)
 	task->buffers[0].handle = handle;
 	task->buffers[0].mode = STARPU_RW;
 
-	task->use_tag = 1;
-	task->tag_id = TAG;
-
 	task->callback_func = wrong_callback;
 
-	ret = starpu_task_submit(task, NULL);
+	ret = starpu_task_submit(task, &event);
 	if (ret == -ENODEV)
 		goto enodev;
 
-	ret = starpu_tag_wait(TAG);
+	ret = starpu_event_wait_and_release(event);
 	if (ret)
 		return -1;
 

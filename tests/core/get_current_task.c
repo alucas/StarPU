@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "#tasks : %d\n", ntasks);
 
-	int i;
+	unsigned i;
 	for (i = 0; i < ntasks; i++)
 	{
 		struct starpu_task *task = starpu_task_create();
