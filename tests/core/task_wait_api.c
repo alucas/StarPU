@@ -52,24 +52,21 @@ int main(int argc, char **argv)
 	fflush(stderr);
 
 	struct starpu_task *taskA, *taskB;
+   starpu_event eventA, eventB;
 	
 	taskA = create_dummy_task();
 	taskB = create_dummy_task();
 
-   starpu_event eventA, eventB;
-
-	/* B depends on A */
 	starpu_task_submit(taskA, &eventA);
-	starpu_task_declare_deps_array(taskB, 1, &eventA);
+	starpu_task_submit_ex(taskB, 1, &eventA, &eventB);
    starpu_event_release(eventA);
-	starpu_task_submit(taskB, &eventB);
 
-	starpu_event_wait(eventB);
-   starpu_event_release(eventB);
+	starpu_event_wait_and_release(eventB);
 
 	fprintf(stderr, "{ C, D, E, F } -> { G }\n");
 
 	struct starpu_task *taskC, *taskD, *taskE, *taskF, *taskG;
+   starpu_event eventC, eventD, eventE, eventF, eventG;
 
 	taskC = create_dummy_task();
 	taskD = create_dummy_task();
@@ -77,22 +74,21 @@ int main(int argc, char **argv)
 	taskF = create_dummy_task();
 	taskG = create_dummy_task();
 
-	struct starpu_task *tasksCDEF[4] = {taskC, taskD, taskE, taskF};
-	starpu_task_declare_deps_array(taskG, 4, tasksCDEF);
+	starpu_task_submit(taskC, &eventC);
+	starpu_task_submit(taskD, &eventD);
+	starpu_task_submit(taskE, &eventE);
+	starpu_task_submit(taskF, &eventF);
 
-	starpu_task_submit(taskC, NULL);
-	starpu_task_submit(taskD, NULL);
-   starpu_event eventG;
-	starpu_task_submit(taskG, &eventG);
-	starpu_task_submit(taskE, NULL);
-	starpu_task_submit(taskF, NULL);
+   starpu_event deps[] = {eventC, eventD, eventE, eventF};
+	starpu_task_submit_ex(taskG, 4, deps, &eventG);
+   starpu_event_release_all(4, deps);
 
-	starpu_event_wait(eventG);
-   starpu_event_release(eventG);
+	starpu_event_wait_and_release(eventG);
 
 	fprintf(stderr, "{ H, I } -> { J, K, L }\n");
 	
 	struct starpu_task *taskH, *taskI, *taskJ, *taskK, *taskL;
+   starpu_event eventH, eventI, eventJ, eventK, eventL;
 
 	taskH = create_dummy_task();
 	taskI = create_dummy_task();
@@ -100,27 +96,19 @@ int main(int argc, char **argv)
 	taskK = create_dummy_task();
 	taskL = create_dummy_task();
 
-	struct starpu_task *tasksHI[2] = {taskH, taskI};
+	starpu_task_submit(taskH, &eventH);
+	starpu_task_submit(taskI, &eventI);
 
-	starpu_task_declare_deps_array(taskJ, 2, tasksHI);
-	starpu_task_declare_deps_array(taskK, 2, tasksHI);
-	starpu_task_declare_deps_array(taskL, 2, tasksHI);
+   starpu_event deps2[] = {eventH, eventI};
 
-   starpu_event eventJ, eventK, eventL;
+	starpu_task_submit_ex(taskJ, 2, deps2, &eventJ);
+	starpu_task_submit_ex(taskK, 2, deps2, &eventK);
+	starpu_task_submit_ex(taskL, 2, deps2, &eventL);
 
-	starpu_task_submit(taskH, NULL);
-	starpu_task_submit(taskI, NULL);
-	starpu_task_submit(taskJ, &eventJ);
-	starpu_task_submit(taskK, &eventK);
-	starpu_task_submit(taskL, &eventL);
+   starpu_event_release_all(2, deps2);
 
-	starpu_event_wait(eventJ);
-	starpu_event_wait(eventK);
-	starpu_event_wait(eventL);
-
-   starpu_event_release(eventJ);
-   starpu_event_release(eventK);
-   starpu_event_release(eventL);
+   starpu_event deps3[] = {eventJ, eventK, eventL};
+   starpu_event_wait_and_release_all(3, deps3);
 
 
 	starpu_shutdown();

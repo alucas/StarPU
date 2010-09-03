@@ -38,12 +38,14 @@ NVCC ?= nvcc
 NVCCFLAGS += -I$(top_srcdir)/include/ -I$(top_builddir)/include $(HWLOC_CFLAGS)
 
 .cu.cubin:
-	$(MKDIR_P) `dirname $@`
-	$(NVCC) -cubin $< -o $@ --compiler-options -fno-strict-aliasing  $(NVCCFLAGS)
+	@echo "  NVCC  " $@
+	@$(MKDIR_P) `dirname $@`
+	@$(NVCC) -cubin $< -o $@ --compiler-options -fno-strict-aliasing  $(NVCCFLAGS)
 
 .cu.o:
-	$(MKDIR_P) `dirname $@`
-	$(NVCC) $< -c -o $@ --compiler-options -fno-strict-aliasing  $(NVCCFLAGS) -I${includedir}
+	@echo "  NVCC  " $@
+	@$(MKDIR_P) `dirname $@`
+	@$(NVCC) $< -c -o $@ --compiler-options -fno-strict-aliasing  $(NVCCFLAGS) -I${includedir}
 
 endif
 
@@ -85,11 +87,8 @@ check_PROGRAMS += 				\
 	core/static_restartable_using_initializer\
 	core/regenerate				\
 	core/wait_all_regenerable_tasks		\
-	core/subgraph_repeat			\
-	core/subgraph_repeat_regenerate		\
 	core/empty_task				\
 	core/empty_task_sync_point		\
-	core/empty_task_sync_point_tasks	\
 	core/empty_task_chain			\
 	core/task_wait_api			\
 	core/declare_deps_in_callback		\
@@ -119,7 +118,6 @@ check_PROGRAMS += 				\
 	helper/cublas_init			\
 	helper/pinned_memory			\
 	helper/execute_on_all			\
-	helper/starpu_create_sync_task		\
 	microbenchs/async_tasks_overhead	\
 	microbenchs/sync_tasks_overhead		\
 	microbenchs/tasks_overhead		\
@@ -127,6 +125,9 @@ check_PROGRAMS += 				\
 	microbenchs/redundant_buffer		\
 	microbenchs/local_pingpong		\
 	overlap/overlap
+#FIXME
+#	core/subgraph_repeat			
+#	core/subgraph_repeat_regenerate		
 
 testbin_PROGRAMS +=				\
 	core/restart
@@ -171,15 +172,15 @@ testbin_PROGRAMS +=				\
 core_wait_all_regenerable_tasks_SOURCES =	\
 	core/wait_all_regenerable_tasks.c
 
-testbin_PROGRAMS +=				\
-	core/subgraph_repeat
-core_subgraph_repeat_SOURCES =			\
-	core/subgraph_repeat.c
+#testbin_PROGRAMS +=				\
+#	core/subgraph_repeat
+#core_subgraph_repeat_SOURCES =			\
+#	core/subgraph_repeat.c
 
-testbin_PROGRAMS +=				\
-	core/subgraph_repeat_regenerate
-core_subgraph_repeat_regenerate_SOURCES =	\
-	core/subgraph_repeat_regenerate.c
+#testbin_PROGRAMS +=				\
+#	core/subgraph_repeat_regenerate
+#core_subgraph_repeat_regenerate_SOURCES =	\
+#	core/subgraph_repeat_regenerate.c
 
 testbin_PROGRAMS +=				\
 	core/empty_task
