@@ -281,18 +281,6 @@ STARPUFFT(destroy_plan)(STARPUFFT(plan) plan)
 		free(plan->roots[dim]);
 	}
 
-	switch (plan->dim) {
-		case 1:
-			STARPUFFT(free_1d_tags)(plan);
-			break;
-		case 2:
-			STARPUFFT(free_2d_tags)(plan);
-			break;
-		default:
-			STARPU_ABORT();
-			break;
-	}
-
 	free(plan->n);
 	free(plan->n1);
 	free(plan->n2);
