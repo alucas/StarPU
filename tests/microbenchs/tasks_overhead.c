@@ -27,7 +27,6 @@ float *buffers[8];
 static unsigned ntasks = 65536;
 static unsigned nbuffers = 0;
 
-struct starpu_task *tasks;
 
 static void dummy_func(void *descr[] __attribute__ ((unused)), void *arg __attribute__ ((unused)))
 {
@@ -84,6 +83,8 @@ int main(int argc, char **argv)
 	double timing_exec;
 	struct timeval start_exec;
 	struct timeval end_exec;
+   struct starpu_task *tasks;
+   starpu_event *events;
 
 	parse_args(argc, argv);
 
@@ -98,8 +99,11 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "#tasks : %d\n#buffers : %d\n", ntasks, nbuffers);
 
-	/* submit tasks (but don't execute them yet !) */
+	/* submit tasks */
 	tasks = malloc(ntasks*sizeof(struct starpu_task));
+	events = malloc((ntasks+1)*sizeof(starpu_event));
+
+   events[0] = starpu_event_create();
 
 	gettimeofday(&start_submit, NULL);
 	for (i = 0; i < ntasks; i++)
@@ -108,8 +112,6 @@ int main(int argc, char **argv)
 		tasks[i].cl = &dummy_codelet;
 		tasks[i].cl_arg = NULL;
 		tasks[i].synchronous = 0;
-		tasks[i].use_tag = 1;
-		tasks[i].tag_id = (starpu_tag_t)i;
 
 		/* we have 8 buffers at most */
 		for (buffer = 0; buffer < nbuffers; buffer++)
@@ -120,21 +122,18 @@ int main(int argc, char **argv)
 	}
 
 	gettimeofday(&start_submit, NULL);
-	for (i = 1; i < ntasks; i++)
-	{
-		starpu_tag_declare_deps((starpu_tag_t)i, 1, (starpu_tag_t)(i-1));
+	for (i = 0; i < ntasks; i++) {
+		starpu_task_submit_ex(&tasks[i], 1, &events[i], &events[i+1]);
+   }
 
-		starpu_task_submit(&tasks[i], NULL);
-	}
-
-	/* submit the first task */
-	starpu_task_submit(&tasks[0], NULL);
+	/* Trigger the first event */
+   starpu_event_trigger(events[0]);
 
 	gettimeofday(&end_submit, NULL);
 
 	/* wait for the execution of the tasks */
 	gettimeofday(&start_exec, NULL);
-	starpu_tag_wait((starpu_tag_t)(ntasks - 1));
+	starpu_event_wait(events[ntasks]);
 	gettimeofday(&end_exec, NULL);
 
 	timing_submit = (double)((end_submit.tv_sec - start_submit.tv_sec)*1000000 + (end_submit.tv_usec - start_submit.tv_usec));

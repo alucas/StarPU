@@ -21,13 +21,6 @@
 
 #include <starpu.h>
 
-static starpu_tag_t tagA = 0x0042;
-static starpu_tag_t tagB = 0x1042;
-static starpu_tag_t tagC = 0x2042;
-static starpu_tag_t tagD = 0x3042;
-static starpu_tag_t tagE = 0x4042;
-static starpu_tag_t tagF = 0x5042;
-
 static void dummy_func(void *descr[] __attribute__ ((unused)), void *arg __attribute__ ((unused)))
 {
 }
@@ -46,49 +39,41 @@ int main(int argc, char **argv)
 {
 	starpu_init(NULL);
 
+   starpu_event eventABC[3], eventD, eventEF[2];
+
 	/* {A,B,C} -> D -> {E,F}, D is empty */
 	struct starpu_task *taskA = starpu_task_create();
 	taskA->cl = &dummy_codelet;
-	taskA->use_tag = 1;
-	taskA->tag_id = tagA;
 	
 	struct starpu_task *taskB = starpu_task_create();
 	taskB->cl = &dummy_codelet;
-	taskB->use_tag = 1;
-	taskB->tag_id = tagB;
 	
 	struct starpu_task *taskC = starpu_task_create();
 	taskC->cl = &dummy_codelet;
-	taskC->use_tag = 1;
-	taskC->tag_id = tagC;
 
 	struct starpu_task *taskD = starpu_task_create();
 	taskD->cl = NULL;
-	taskD->use_tag = 1;
-	taskD->tag_id = tagD;
-	starpu_tag_declare_deps(tagD, 3, tagA, tagB, tagC);
 
 	struct starpu_task *taskE = starpu_task_create();
 	taskE->cl = &dummy_codelet;
-	taskE->use_tag = 1;
-	taskE->tag_id = tagE;
-	starpu_tag_declare_deps(tagE, 1, tagD);
 
 	struct starpu_task *taskF = starpu_task_create();
 	taskF->cl = &dummy_codelet;
-	taskF->use_tag = 1;
-	taskF->tag_id = tagF;
-	starpu_tag_declare_deps(tagF, 1, tagD);
 
-	starpu_task_submit(taskA, NULL);
-	starpu_task_submit(taskB, NULL);
-	starpu_task_submit(taskC, NULL);
-	starpu_task_submit(taskD, NULL);
-	starpu_task_submit(taskE, NULL);
-	starpu_task_submit(taskF, NULL);
+	starpu_task_submit(taskA, &eventABC[0]);
+	starpu_task_submit(taskB, &eventABC[1]);
+	starpu_task_submit(taskC, &eventABC[2]);
 
-	starpu_tag_t tag_array[2] = {tagE, tagF};
-	starpu_tag_wait_array(2, tag_array);
+	starpu_task_submit_ex(taskD, 3, eventABC, &eventD);
+
+	starpu_task_submit_ex(taskE, 1, &eventD, &eventEF[0]);
+	starpu_task_submit_ex(taskF, 1, &eventD, &eventEF[1]);
+
+   starpu_event_wait_all(2, eventEF);
+
+   starpu_event_release_all(3, eventABC);
+   starpu_event_release(eventD);
+   starpu_event_release_all(2, eventEF);
 
 	starpu_shutdown();
 
