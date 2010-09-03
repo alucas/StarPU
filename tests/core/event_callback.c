@@ -25,6 +25,8 @@ int main() {
    int val = 0;
    unsigned count = 10;
 
+	starpu_init(NULL);
+
    event = starpu_event_create();
 
    starpu_event_callback_add(event, &callback, &val);
@@ -36,6 +38,8 @@ int main() {
       count -= 1;
       usleep(50);
    }
+
+	starpu_shutdown();
 
    return (val != 999 ? -1 : 0);
 }

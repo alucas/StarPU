@@ -16,6 +16,7 @@
 
 #include <core/trigger.h>
 #include <core/event.h>
+#include <core/errorcheck.h>
 #include <stdlib.h>
 
 struct event_callback {
@@ -50,9 +51,13 @@ void event_callback_callback(void*arg) {
 
    free(arg);
 
-   /* FIXME we should set a flag indicating that this thread can't use blocking methods */
+   starpu_worker_status s = _starpu_get_local_worker_status();
+
+   /* We set the flag indicating that this thread can't use blocking methods */
+   _starpu_set_local_worker_status(STATUS_CALLBACK);
 
    func(data);
 
-   /* FIXME we should unset the flag indicating that this thread can't use blocking methods */
+   /* We can unset the flag */
+   _starpu_set_local_worker_status(s);
 }
