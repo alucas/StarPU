@@ -220,11 +220,19 @@ int starpu_task_submit(struct starpu_task *task, starpu_event *event)
    if (is_sync)
       _starpu_event_retain_private(j->event);
 
+   /* We need to keep an event reference because after _starpu_submit_job,
+    * j may be destroyed */
+   starpu_event ev = NULL;
+   if (is_sync) {
+      ev = j->event;
+      _starpu_event_retain_private(ev);
+   }
+
 	ret = _starpu_submit_job(j, 0);
 
 	if (is_sync) {
-		starpu_event_wait(j->event);
-      _starpu_event_release_private(j->event);
+		starpu_event_wait(ev);
+      _starpu_event_release_private(ev);
    }
 
 	return ret;
