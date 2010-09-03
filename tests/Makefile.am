@@ -92,6 +92,7 @@ check_PROGRAMS += 				\
 	core/declare_deps_after_submission_synchronous	\
 	core/get_current_task			\
 	core/event_callback			\
+	core/event_callback_blocking			\
 	datawizard/data_implicit_deps		\
 	datawizard/scratch			\
 	datawizard/sync_and_notify_data		\
@@ -185,6 +186,8 @@ core_get_current_task_SOURCES =			\
 core_event_callback_SOURCES =			\
 	core/event_callback.c
 
+core_event_callback_blocking_SOURCES =			\
+	core/event_callback_blocking.c
 
 datawizard_data_implicit_deps_SOURCES =		\
 	datawizard/data_implicit_deps.c
