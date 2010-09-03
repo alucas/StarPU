@@ -96,6 +96,7 @@ check_PROGRAMS += 				\
 	core/declare_deps_after_submission_synchronous	\
 	core/get_current_task			\
 	datawizard/acquire_release		\
+	core/event_callback			\
 	datawizard/data_implicit_deps		\
 	datawizard/scratch			\
 	datawizard/sync_and_notify_data		\
@@ -227,6 +228,14 @@ core_get_current_task_SOURCES =			\
 
 testbin_PROGRAMS +=				\
 	datawizard/acquire_release
+datawizard_acquire_release_SOURCES = \
+   datawizard/acquire_release.c
+
+testbin_PROGRAMS +=				\
+	core/event_callback
+core_event_callback_SOURCES =			\
+	core/event_callback.c
+
 
 testbin_PROGRAMS +=				\
 	datawizard/data_implicit_deps
