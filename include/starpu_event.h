@@ -26,11 +26,19 @@ typedef struct starpu_event_t * starpu_event;
 #include <starpu_profiling.h>
 
 int starpu_event_release(starpu_event);
+int starpu_event_release_all(int num_events, starpu_event *events);
+
 int starpu_event_retain(starpu_event);
+int starpu_event_retain_all(int num_events, starpu_event *events);
 
 int starpu_event_wait(starpu_event);
 int starpu_event_wait_all(int num_events, starpu_event *events);
+
+int starpu_event_wait_and_release(starpu_event);
+int starpu_event_wait_and_release_all(int num_events, starpu_event *events);
+
 int starpu_event_test(starpu_event);
+int starpu_event_test_all(int num_events, starpu_event *events);
 
 /* User events */
 starpu_event starpu_event_create();

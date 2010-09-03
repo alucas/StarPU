@@ -80,12 +80,28 @@ int starpu_event_release(starpu_event event) {
    return 0;
 }
 
+int starpu_event_release_all(int num_events, starpu_event *events) {
+   int i;
+   for (i=0; i<num_events; i++)
+      starpu_event_release(events[i]);
+
+   return 0;
+}
+
 int starpu_event_retain(starpu_event event) {
    _starpu_event_lock(event);
    
    event->ref_count++;
 
    _starpu_event_unlock(event);
+
+   return 0;
+}
+
+int starpu_event_retain_all(int num_events, starpu_event *events) {
+   int i;
+   for (i=0; i<num_events; i++)
+      starpu_event_retain(events[i]);
 
    return 0;
 }
@@ -114,6 +130,9 @@ int starpu_event_wait(starpu_event event) {
 }
 
 int starpu_event_wait_all(int num_events, starpu_event *events) {
+	if (STARPU_UNLIKELY(!_starpu_worker_may_perform_blocking_calls()))
+		return -EDEADLK;
+
    int i;
    for (i=0; i<num_events; i++)
       starpu_event_wait(events[i]);
@@ -121,8 +140,33 @@ int starpu_event_wait_all(int num_events, starpu_event *events) {
    return 0;
 }
 
+int starpu_event_wait_and_release(starpu_event event) {
+   starpu_event_wait(event);
+   starpu_event_release(event);
+
+   return 0;
+}
+
+int starpu_event_wait_and_release_all(int num_events, starpu_event *events) {
+   int i;
+   for (i=0; i<num_events; i++)
+      starpu_event_wait_and_release(events[i]);
+
+   return 0;
+}
+
 int starpu_event_test(starpu_event event) {
    return event->complete;
+}
+
+int starpu_event_test_all(int num_events, starpu_event *events) {
+   int i;
+   for(i=0; i<num_events; i++) {
+      if (!starpu_event_test(events[i]))
+         return 0;
+   }
+
+   return 1;
 }
 
 starpu_event starpu_event_create() {
