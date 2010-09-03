@@ -173,10 +173,13 @@ struct starpu_task *starpu_task_create(void);
  * structure (default behaviour). Calling this function on a statically
  * allocated task results in an undefined behaviour. */
 void starpu_task_destroy(struct starpu_task *task);
+
 int starpu_task_submit(struct starpu_task *task, starpu_event *event);
+int starpu_task_submit_all(int num_tasks, struct starpu_task **tasks, starpu_event *event);
 
 /* Add dependencies to "num_events" events in "events" array, then submit the task */
 int starpu_task_submit_ex(struct starpu_task *task, int num_events, starpu_event *events, starpu_event *event);
+int starpu_task_submit_all_ex(int num_tasks, struct starpu_task **tasks, int num_events, starpu_event *pevents, starpu_event *event);
 
 /* This function waits until all the tasks that were already submitted have
  * been executed. */
