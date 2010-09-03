@@ -62,10 +62,12 @@ void _starpu_trigger_signal(starpu_trigger trigger) {
    int dep_count =__sync_sub_and_fetch(&trigger->dep_count, 1);
 
    if (dep_count == 0) {
-
-      trigger->callback(trigger->data);
+      void (*callback)(void*) = trigger->callback;
+      void *data = trigger->data;
 
       if (trigger->allocated)
          free(trigger);
+
+      callback(data);
    }
 }
