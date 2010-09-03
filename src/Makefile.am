@@ -117,6 +117,7 @@ libstarpu_la_SOURCES = 						\
 	core/debug.c						\
 	core/event.c						\
 	core/event_group.c						\
+	core/event_callback.c						\
 	core/errorcheck.c					\
 	core/progress_hook.c					\
 	core/dependencies/implicit_data_deps.c			\
