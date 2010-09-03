@@ -226,9 +226,58 @@ int starpu_task_submit(struct starpu_task *task, starpu_event *event)
 	return ret;
 }
 
+int starpu_task_submit_all(int num_tasks, struct starpu_task **tasks, starpu_event *event) {
+   starpu_event events[num_tasks];
+   int i,ret;
+
+   if (event != NULL) {
+      for (i=0; i<num_tasks; i++) {
+         ret = starpu_task_submit(tasks[i], &events[i]);
+         if (ret)
+            return ret;
+      }
+      *event = starpu_event_group_create(num_tasks, events);
+      starpu_event_release_all(num_tasks, events);
+   }
+   else {
+      for (i=0; i<num_tasks; i++) {
+         ret = starpu_task_submit(tasks[i], NULL);
+         if (ret)
+            return ret;
+      }
+   }
+
+   return 0;
+}
+
 int starpu_task_submit_ex(struct starpu_task *task, int num_events, starpu_event *events, starpu_event *event) {
    starpu_task_declare_deps_array(task, num_events, events);
    return starpu_task_submit(task, event);
+}
+
+int starpu_task_submit_all_ex(int num_tasks, struct starpu_task **tasks, int num_events, starpu_event *pevents, starpu_event *event) {
+   starpu_event events[num_tasks];
+   int i,ret;
+
+   if (event != NULL) {
+      for (i=0; i<num_tasks; i++) {
+         ret = starpu_task_submit_ex(tasks[i], num_events, pevents, &events[i]);
+         if (ret)
+            return ret;
+      }
+      *event = starpu_event_group_create(num_tasks, events);
+      starpu_event_release_all(num_tasks, events);
+   }
+   else {
+      for (i=0; i<num_tasks; i++) {
+         ret = starpu_task_submit_ex(tasks[i], num_events, pevents, NULL);
+         if (ret)
+            return ret;
+      }
+   }
+
+   return 0;
+
 }
 
 void starpu_display_codelet_stats(struct starpu_codelet_t *cl)
