@@ -145,9 +145,6 @@ int _starpu_submit_job(starpu_job_t j, unsigned do_not_increment_nsubmitted)
       _starpu_event_profiling_submit_time_set(j->event, &submit_time);
    }
 
-   /* Enable job trigger. From now, no new dependency can be added */
-   _starpu_trigger_enable(&j->trigger);
-
 	j->terminated = 0;
 
 	if (!do_not_increment_nsubmitted)
@@ -155,7 +152,10 @@ int _starpu_submit_job(starpu_job_t j, unsigned do_not_increment_nsubmitted)
 
 	j->submitted = 1;
 
-	return _starpu_may_schedule(j);
+   /* Enable job trigger. From now, no new dependency can be added */
+   _starpu_trigger_enable(&j->trigger);
+
+	return 0;
 }
 
 /* application should submit new tasks to StarPU through this function */
