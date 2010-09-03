@@ -91,6 +91,7 @@ check_PROGRAMS += 				\
 	core/declare_deps_after_submission	\
 	core/declare_deps_after_submission_synchronous	\
 	core/get_current_task			\
+	core/event_callback			\
 	datawizard/data_implicit_deps		\
 	datawizard/scratch			\
 	datawizard/sync_and_notify_data		\
@@ -180,6 +181,9 @@ core_declare_deps_after_submission_synchronous_SOURCES =	\
 
 core_get_current_task_SOURCES =			\
 	core/get_current_task.c
+
+core_event_callback_SOURCES =			\
+	core/event_callback.c
 
 
 datawizard_data_implicit_deps_SOURCES =		\

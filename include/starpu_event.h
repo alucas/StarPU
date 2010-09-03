@@ -44,8 +44,10 @@ int starpu_event_test_all(int num_events, starpu_event *events);
 starpu_event starpu_event_create();
 void starpu_event_trigger(starpu_event);
 
-/* Profiling
- * These functions require that StarPU profiling is enabled
+/* 
+ * Profiling information
+ * Event profiling is enabled only if StarPU profiling was enabled
+ * when the event was created
  */
 int starpu_event_profiling_enabled(starpu_event);
 void starpu_event_profiling_submit_time(starpu_event, struct timespec*);
@@ -53,8 +55,13 @@ void starpu_event_profiling_start_time(starpu_event, struct timespec*);
 void starpu_event_profiling_end_time(starpu_event, struct timespec*);
 int starpu_event_profiling_worker_id(starpu_event);
 
+/* Create an new event triggered when events in "events" are all triggered */
 starpu_event starpu_event_group_create(int num_events, starpu_event *events);
 
+/* Add a callback function to an event */
+int starpu_event_callback_add(starpu_event, void (*func)(void*), void*data);
+/* Add a callback function to a group of events */
+int starpu_event_group_callback_add(int num_event, starpu_event *events, void (*func)(void*), void*data);
 
 #ifdef __cplusplus
 }
