@@ -65,24 +65,20 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "{ C, D, E, F } -> { G }\n");
 
-	struct starpu_task *taskC, *taskD, *taskE, *taskF, *taskG;
-   starpu_event eventC, eventD, eventE, eventF, eventG;
+   struct starpu_task *tasksCDEF[4], *taskG;
+   starpu_event eventCDEF, eventG;
 
-	taskC = create_dummy_task();
-	taskD = create_dummy_task();
-	taskE = create_dummy_task();
-	taskF = create_dummy_task();
+	tasksCDEF[0] = create_dummy_task();
+	tasksCDEF[1] = create_dummy_task();
+	tasksCDEF[2] = create_dummy_task();
+	tasksCDEF[3] = create_dummy_task();
 	taskG = create_dummy_task();
 
-	starpu_task_submit(taskC, &eventC);
-	starpu_task_submit(taskD, &eventD);
-	starpu_task_submit(taskE, &eventE);
-	starpu_task_submit(taskF, &eventF);
+	starpu_task_submit_all(4, tasksCDEF, &eventCDEF);
 
-   starpu_event deps[] = {eventC, eventD, eventE, eventF};
-	starpu_task_submit_ex(taskG, 4, deps, &eventG);
-   starpu_event_release_all(4, deps);
+	starpu_task_submit_ex(taskG, 1, &eventCDEF, &eventG);
 
+   starpu_event_release(eventCDEF);
 	starpu_event_wait_and_release(eventG);
 
 	fprintf(stderr, "{ H, I } -> { J, K, L }\n");
