@@ -26,6 +26,7 @@
 #include <starpu_cuda.h>
 #include <profiling/profiling.h>
 
+
 void _starpu_wake_all_blocked_workers_on_node(unsigned nodeid)
 {
 	/* wake up all workers on that memory node */
@@ -254,7 +255,7 @@ nomem:
 	return ENOMEM;
 }
 
-void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel __attribute__ ((unused)),
+void _starpu_driver_wait_request_completion(starpu_data_request_t req __attribute__ ((unused)),
 					unsigned handling_node)
 {
 	starpu_node_kind kind = _starpu_get_node_kind(handling_node);
@@ -266,7 +267,7 @@ void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel 
 	switch (kind) {
 #ifdef STARPU_USE_CUDA
 		case STARPU_CUDA_RAM:
-			event = (*async_channel).cuda_event;
+			event = req->async_channel.cuda_event;
 
 			cures = cudaEventSynchronize(event);
 			if (STARPU_UNLIKELY(cures))
@@ -281,7 +282,7 @@ void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel 
 #ifdef STARPU_USE_OPENCL
       case STARPU_OPENCL_RAM:
          {
-            cl_event opencl_event = (*async_channel).opencl_event;
+            cl_event opencl_event = req->async_channel.opencl_event;
             if (opencl_event == NULL) STARPU_ABORT();
             cl_int err = clWaitForEvents(1, &opencl_event);
             if (err != CL_SUCCESS) STARPU_OPENCL_REPORT_ERROR(err);
@@ -295,7 +296,7 @@ void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel 
 	}
 }
 
-unsigned _starpu_driver_test_request_completion(starpu_async_channel *async_channel __attribute__ ((unused)),
+unsigned _starpu_driver_test_request_completion(starpu_data_request_t req __attribute__ ((unused)),
 					unsigned handling_node)
 {
 	starpu_node_kind kind = _starpu_get_node_kind(handling_node);
@@ -307,7 +308,7 @@ unsigned _starpu_driver_test_request_completion(starpu_async_channel *async_chan
 	switch (kind) {
 #ifdef STARPU_USE_CUDA
 		case STARPU_CUDA_RAM:
-			event = (*async_channel).cuda_event;
+			event = req->async_channel.cuda_event;
 
 			success = (cudaEventQuery(event) == cudaSuccess);
 			if (success)
@@ -319,7 +320,7 @@ unsigned _starpu_driver_test_request_completion(starpu_async_channel *async_chan
       case STARPU_OPENCL_RAM:
          {
             cl_int event_status;
-            cl_event opencl_event = (*async_channel).opencl_event;
+            cl_event opencl_event = req->async_channel.opencl_event;
             if (opencl_event == NULL) STARPU_ABORT();
             cl_int err = clGetEventInfo(opencl_event, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(event_status), &event_status, NULL);
             if (err != CL_SUCCESS) STARPU_OPENCL_REPORT_ERROR(err);
