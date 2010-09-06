@@ -90,15 +90,15 @@ noinst_HEADERS = 						\
 	common/starpu_spinlock.h				\
 	common/fxt.h						\
 	common/utils.h						\
-	drivers/driver_common/driver_common.h			\
-	drivers/cpu/driver_cpu.h				\
-	drivers/gordon/driver_gordon.h				\
+	drivers/common/common.h			\
+	drivers/cpu/cpu.h				\
+	drivers/gordon/gordon.h				\
 	drivers/gordon/gordon_interface.h			\
-	drivers/cuda/driver_cuda.h				\
-	drivers/cuda/driver_cuda_event.h				\
-	drivers/opencl/driver_opencl.h				\
-	drivers/opencl/driver_opencl_event.h				\
-	drivers/opencl/driver_opencl_utils.h			\
+	drivers/cuda/cuda.h				\
+	drivers/cuda/event.h				\
+	drivers/opencl/opencl.h				\
+	drivers/opencl/event.h				\
+	drivers/opencl/utils.h			\
 	profiling/profiling.h
 
 libstarpu_la_SOURCES = 						\
@@ -136,7 +136,7 @@ libstarpu_la_SOURCES = 						\
 	sched_policies/stack_queues.c				\
 	sched_policies/deque_queues.c				\
 	sched_policies/fifo_queues.c				\
-	drivers/driver_common/driver_common.c			\
+	drivers/common/common.c			\
 	datawizard/memory_nodes.c				\
 	datawizard/write_back.c					\
 	datawizard/coherency.c					\
@@ -172,20 +172,20 @@ libstarpu_la_SOURCES = 						\
 	profiling/bus_profiling_helpers.c
 
 if STARPU_USE_CPU
-libstarpu_la_SOURCES += drivers/cpu/driver_cpu.c
+libstarpu_la_SOURCES += drivers/cpu/cpu.c
 endif
 
 if STARPU_USE_CUDA
-libstarpu_la_SOURCES += drivers/cuda/driver_cuda.c \
-                        drivers/cuda/driver_cuda_event.c
+libstarpu_la_SOURCES += drivers/cuda/cuda.c \
+                        drivers/cuda/event.c
 endif
 
 if STARPU_USE_GORDON
-libstarpu_la_SOURCES += drivers/gordon/driver_gordon.c
+libstarpu_la_SOURCES += drivers/gordon/gordon.c
 endif
 
 if STARPU_USE_OPENCL
-libstarpu_la_SOURCES += drivers/opencl/driver_opencl.c       \
-                        drivers/opencl/driver_opencl_event.c \
-                        drivers/opencl/driver_opencl_utils.c
+libstarpu_la_SOURCES += drivers/opencl/opencl.c       \
+                        drivers/opencl/event.c \
+                        drivers/opencl/utils.c
 endif

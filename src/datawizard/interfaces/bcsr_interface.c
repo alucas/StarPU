@@ -24,7 +24,7 @@
 
 #include <starpu_cuda.h>
 #include <starpu_opencl.h>
-#include <drivers/opencl/driver_opencl.h>
+#include <drivers/opencl/opencl.h>
 
 /*
  * BCSR : blocked CSR, we use blocks of size (r x c)

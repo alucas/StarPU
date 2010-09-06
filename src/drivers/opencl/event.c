@@ -19,7 +19,7 @@
 #include <CL/cl.h>
 #include <starpu_event.h>
 #include <core/event.h>
-#include "driver_opencl_event.h"
+#include <drivers/opencl/event.h>
 
 static void opencl_event_callback(cl_event event, cl_int status, void *user_data) {
    starpu_event ev = (starpu_event)user_data;

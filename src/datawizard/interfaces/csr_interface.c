@@ -24,7 +24,7 @@
 
 #include <starpu_cuda.h>
 #include <starpu_opencl.h>
-#include <drivers/opencl/driver_opencl.h>
+#include <drivers/opencl/opencl.h>
 
 static int copy_ram_to_ram(void *src_interface, unsigned src_node __attribute__((unused)), void *dst_interface, unsigned dst_node __attribute__((unused)));
 #ifdef STARPU_USE_CUDA

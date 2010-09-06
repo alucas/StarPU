@@ -21,34 +21,19 @@
 #include <common/utils.h>
 #include <core/debug.h>
 #include <starpu_opencl.h>
-#include <drivers/driver_common/driver_common.h>
-#include "driver_opencl.h"
-#include "driver_opencl_utils.h"
+#include <drivers/common/common.h>
+#include <drivers/opencl/opencl.h>
+#include <drivers/opencl/utils.h>
 #include <common/utils.h>
 #include <profiling/profiling.h>
 #include <core/event.h>
 
-static cl_context contexts[STARPU_MAXOPENCLDEVS];
-static cl_device_id devices[STARPU_MAXOPENCLDEVS];
-static cl_command_queue queues[STARPU_MAXOPENCLDEVS];
-static cl_uint nb_devices = -1;
+static struct starpu_driver_t driver = {
+   .buffer_create = &_starpu_opencl_buffer_create,
+   .buffer_release  = &_starpu_opencl_buffer_release
+};
+
 static int init_done = 0;
-extern char *_starpu_opencl_program_dir;
-
-void starpu_opencl_get_context(int devid, cl_context *context)
-{
-   *context = contexts[devid];
-}
-
-void starpu_opencl_get_device(int devid, cl_device_id *device)
-{
-   *device = devices[devid];
-}
-
-void starpu_opencl_get_queue(int devid, cl_command_queue *queue)
-{
-   *queue = queues[devid];
-}
 
 int _starpu_opencl_init_context(int devid)
 {
