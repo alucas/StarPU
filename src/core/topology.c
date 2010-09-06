@@ -20,7 +20,7 @@
 #include <core/workers.h>
 #include <core/debug.h>
 #include <core/topology.h>
-#include <drivers/cuda/driver_cuda.h>
+#include <drivers/cuda/cuda.h>
 #include <common/hash.h>
 #include <profiling/profiling.h>
 

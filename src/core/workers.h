@@ -35,18 +35,18 @@
 #endif
 
 #ifdef STARPU_USE_CUDA
-#include <drivers/cuda/driver_cuda.h>
+#include <drivers/cuda/cuda.h>
 #endif
 
 #ifdef STARPU_USE_OPENCL
-#include <drivers/opencl/driver_opencl.h>
+#include <drivers/opencl/opencl.h>
 #endif
 
 #ifdef STARPU_USE_GORDON
-#include <drivers/gordon/driver_gordon.h>
+#include <drivers/gordon/gordon.h>
 #endif
 
-#include <drivers/cpu/driver_cpu.h>
+#include <drivers/cpu/cpu.h>
 
 #include <datawizard/datawizard.h>
 

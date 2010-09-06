@@ -21,7 +21,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <common/utils.h>
-#include "driver_gordon.h"
+#include <drivers/gordon/gordon.h>
 #include "gordon_interface.h"
 #include <core/sched_policy.h>
 

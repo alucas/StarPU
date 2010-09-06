@@ -14,8 +14,8 @@
  * See the GNU Lesser General Public License in COPYING.LGPL for more details.
  */
 
-#ifndef __DRIVER_OPENCL_H__
-#define __DRIVER_OPENCL_H__
+#ifndef __OPENCL_H__
+#define __OPENCL_H__
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -24,6 +24,19 @@
 #ifdef STARPU_USE_OPENCL
 
 #include <CL/cl.h>
+
+#include <CL/cl.h>
+#include <core/device.h>
+
+typedef struct starpu_opencl_device_t *starpu_opencl_device;
+
+struct starpu_opencl_device_t {
+   STARPU_DRIVER_OBJECT;
+   cl_platform_id platform_id;
+   cl_device_id device_id;
+   cl_context context;
+   cl_command_queue command_queue;
+};
 
 extern
 int _starpu_opencl_init_context(int devid);
@@ -68,4 +81,4 @@ extern
 void *_starpu_opencl_worker(void *);
 
 #endif // STARPU_USE_OPENCL
-#endif //  __DRIVER_OPENCL_H__
+#endif //  __OPENCL_H__

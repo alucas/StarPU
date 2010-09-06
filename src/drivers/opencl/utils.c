@@ -24,8 +24,8 @@
 
 #include <starpu_opencl.h>
 #include <core/workers.h>
-#include "driver_opencl_utils.h"
-#include "driver_opencl.h"
+#include <drivers/opencl/utils.h>
+#include <drivers/opencl/opencl.h>
 
 char *_starpu_opencl_program_dir;
 
