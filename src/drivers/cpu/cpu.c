@@ -18,10 +18,10 @@
 #include <starpu.h>
 #include <starpu_profiling.h>
 #include <profiling/profiling.h>
-#include <drivers/driver_common/driver_common.h>
+#include <drivers/common/common.h>
 #include <common/utils.h>
 #include <core/debug.h>
-#include "driver_cpu.h"
+#include <drivers/cpu/cpu.h>
 #include <core/sched_policy.h>
 #include <core/event.h>
 

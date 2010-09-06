@@ -24,4 +24,7 @@
    #define UNUSED(x) x 
 #endif
 
+typedef struct starpu_driver_t *starpu_driver;
+typedef struct starpu_buffer_t * starpu_buffer;
+
 #endif //COMMON_H

@@ -20,8 +20,8 @@
 #include <common/utils.h>
 #include <common/config.h>
 #include <core/debug.h>
-#include <drivers/driver_common/driver_common.h>
-#include "driver_cuda.h"
+#include <drivers/common/common.h>
+#include <drivers/cuda/cuda.h>
 #include <core/sched_policy.h>
 #include <profiling/profiling.h>
 #include <core/event.h>
