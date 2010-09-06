@@ -34,7 +34,7 @@ typedef starpu_node_kind starpu_memory_node_tuple;
 
 #define _STARPU_MEMORY_NODE_TUPLE(node1,node2) (node1 | (node2 << 4))
 #define _STARPU_MEMORY_NODE_TUPLE_FIRST(tuple) (tuple & 0x0F)
-#define _STARPU_MEMORY_NODE_TUPLE_SECOND(tuple) (tuple & 0xF0)
+#define _STARPU_MEMORY_NODE_TUPLE_SECOND(tuple) ((tuple & 0xF0) >> 4)
 
 struct _cond_and_mutex {
         pthread_cond_t *cond;

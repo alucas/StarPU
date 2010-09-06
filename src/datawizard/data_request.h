@@ -17,10 +17,12 @@
 #ifndef __DATA_REQUEST_H__
 #define __DATA_REQUEST_H__
 
+LIST_DECLARE_TYPE(starpu_data_request);
+
 #include <semaphore.h>
 #include <datawizard/coherency.h>
-#include <datawizard/copy_driver.h>
 #include <common/list.h>
+#include <datawizard/copy_driver.h>
 #include <common/starpu_spinlock.h>
 
 struct callback_list {
@@ -29,7 +31,7 @@ struct callback_list {
 	struct callback_list *next;
 };
 
-LIST_TYPE(starpu_data_request,
+LIST_CREATE_TYPE(starpu_data_request,
 	starpu_spinlock_t lock;
 	unsigned refcnt;
 
