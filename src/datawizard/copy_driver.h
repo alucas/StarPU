@@ -18,9 +18,14 @@
 #define __COPY_DRIVER_H__
 
 #include <common/config.h>
+#include <common/list.h>
 #include <datawizard/memory_nodes.h>
 #include "coherency.h"
 #include "memalloc.h"
+
+#ifndef __DATA_REQUEST_H__
+LIST_DECLARE_TYPE(starpu_data_request);
+#endif
 
 #ifdef STARPU_USE_CUDA
 #include <cuda.h>
@@ -52,6 +57,6 @@ __attribute__((warn_unused_result))
 int _starpu_driver_copy_data_1_to_1(starpu_data_handle handle, uint32_t node, 
 		uint32_t requesting_node, unsigned donotread, struct starpu_data_request_s *req, unsigned may_allloc);
 
-unsigned _starpu_driver_test_request_completion(starpu_async_channel *async_channel, unsigned handling_node);
-void _starpu_driver_wait_request_completion(starpu_async_channel *async_channel, unsigned handling_node);
+unsigned _starpu_driver_test_request_completion(starpu_data_request_t req, unsigned handling_node);
+void _starpu_driver_wait_request_completion(starpu_data_request_t req, unsigned handling_node);
 #endif // __COPY_DRIVER_H__

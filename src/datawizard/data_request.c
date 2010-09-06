@@ -395,11 +395,11 @@ static void _handle_pending_node_data_requests(uint32_t src_node, unsigned force
 		/* wait until the transfer is terminated */
 		if (force)
 		{
-			_starpu_driver_wait_request_completion(&r->async_channel, src_node);
+			_starpu_driver_wait_request_completion(r, src_node);
 			starpu_handle_data_request_completion(r);
 		}
 		else {
-			if (_starpu_driver_test_request_completion(&r->async_channel, src_node))
+			if (_starpu_driver_test_request_completion(r, src_node))
 			{
 				
 				starpu_handle_data_request_completion(r);
