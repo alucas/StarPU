@@ -26,6 +26,7 @@
 #include <CL/cl.h>
 
 starpu_event _starpu_opencl_event_create(cl_event);
+int _starpu_opencl_event_bind(cl_event clevent, starpu_event event);
 
 #endif // STARPU_USE_OPENCL
 #endif //  __DRIVER_OPENCL_EVENT_H__

@@ -20,12 +20,18 @@
 #include <core/sched_policy.h>
 #include <datawizard/datastats.h>
 #include <common/fxt.h>
+#include <core/event.h>
 #include "copy_driver.h"
 #include "memalloc.h"
 #include <starpu_opencl.h>
 #include <starpu_cuda.h>
 #include <profiling/profiling.h>
 
+struct starpu_readwrite_buffer_args {
+   void * interface;
+   starpu_data_handle handle;
+   starpu_event event;
+};
 
 void _starpu_wake_all_blocked_workers_on_node(unsigned nodeid)
 {
@@ -81,6 +87,48 @@ void starpu_wake_all_blocked_workers(void)
  * per communication */
 static unsigned communication_cnt = 0;
 #endif
+
+static void enqueue_read_callback(void*data);
+
+int starpu_data_read_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event) {
+
+   struct starpu_readwrite_buffer_args * arg = malloc(sizeof(struct starpu_readwrite_buffer_args));
+   arg->handle = handle;
+   arg->interface = interface;
+   arg->event = _starpu_event_create();
+
+   /* We switch from private event retaining to public retaining */
+   if (event != NULL) {
+      starpu_event_retain(arg->event);
+      *event = arg->event;
+   }
+
+   starpu_trigger trigger = _starpu_trigger_create(enqueue_read_callback, arg, NULL);
+   _starpu_trigger_events_register(trigger, num_events, events);
+   _starpu_trigger_enable(trigger);
+
+   return 0;
+}
+
+static void enqueue_read_callback_callback(void*data) {
+   starpu_event event = (starpu_event)data;
+   _starpu_event_complete(event);
+   _starpu_event_release_private(event);
+}
+
+static void enqueue_read_callback(void*data) {
+   struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
+
+   int src_node = _starpu_select_src_node(arg->handle);
+
+   starpu_data_request_t r = _starpu_create_data_request(arg->handle, src_node, -1, src_node, STARPU_R, 0);
+   r->type = STARPU_DATA_REQUEST_READ;
+   r->interface = arg->interface;
+
+   _starpu_data_request_append_callback(r, enqueue_read_callback_callback, arg->event);
+
+   _starpu_post_data_request(r, src_node);
+}
 
 static int copy_data_1_to_1_generic(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, struct starpu_data_request_s *req __attribute__((unused)))
 {
@@ -300,21 +348,21 @@ unsigned _starpu_driver_test_request_completion(starpu_data_request_t req __attr
 					unsigned handling_node)
 {
 	starpu_node_kind kind = _starpu_get_node_kind(handling_node);
-	unsigned success;
+	unsigned success = 0;
 #ifdef STARPU_USE_CUDA
 	cudaEvent_t event;
 #endif
 
-	switch (kind) {
+   switch (kind) {
 #ifdef STARPU_USE_CUDA
-		case STARPU_CUDA_RAM:
-			event = req->async_channel.cuda_event;
+      case STARPU_CUDA_RAM:
+         event = req->async_channel.cuda_event;
 
-			success = (cudaEventQuery(event) == cudaSuccess);
-			if (success)
-				cudaEventDestroy(event);
+         success = (cudaEventQuery(event) == cudaSuccess);
+         if (success)
+            cudaEventDestroy(event);
 
-			break;
+         break;
 #endif
 #ifdef STARPU_USE_OPENCL
       case STARPU_OPENCL_RAM:
@@ -328,11 +376,11 @@ unsigned _starpu_driver_test_request_completion(starpu_data_request_t req __attr
             break;
          }
 #endif
-		case STARPU_CPU_RAM:
-		default:
-			STARPU_ABORT();
-			success = 0;
-	}
+      case STARPU_CPU_RAM:
+      default:
+         STARPU_ABORT();
+         success = 0;
+   }
 
 	return success;
 }
