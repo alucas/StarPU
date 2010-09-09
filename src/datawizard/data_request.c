@@ -63,6 +63,8 @@ static void starpu_data_request_destroy(starpu_data_request_t r)
 {
 	r->handle->per_node[r->dst_node].request = NULL;
 
+   _starpu_event_release_private(r->event);
+
 	starpu_data_request_delete(r);
 }
 
@@ -73,6 +75,9 @@ starpu_data_request_t _starpu_create_data_request(starpu_data_handle handle, uin
 
 	_starpu_spin_init(&r->lock);
 
+   r->type = STARPU_DATA_REQUEST_COPY;
+
+   r->event = _starpu_event_create();
 	r->handle = handle;
 	r->src_node = src_node;
 	r->dst_node = dst_node;

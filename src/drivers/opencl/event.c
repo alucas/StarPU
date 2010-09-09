@@ -26,6 +26,7 @@ static void opencl_event_callback(cl_event event, cl_int status, void *user_data
 
    _starpu_event_complete(ev);
 
+   _starpu_event_release_private(event);
    clReleaseEvent(event);
 }
 
@@ -33,9 +34,17 @@ starpu_event _starpu_opencl_event_create(cl_event event) {
 
    starpu_event ev = _starpu_event_create();
 
-   clSetEventCallback(event, CL_COMPLETE, opencl_event_callback, ev);
+   _starpu_opencl_event_bind(event, ev);
 
    return ev;
+}
+
+int _starpu_opencl_event_bind(cl_event clevent, starpu_event event) {
+   _starpu_event_retain_private(event);
+
+   cl_int ret = clSetEventCallback(clevent, CL_COMPLETE, opencl_event_callback, event);
+
+   return (ret != CL_SUCCESS);
 }
 
 #endif // STARPU_USE_OPENCL

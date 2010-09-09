@@ -31,13 +31,24 @@ struct callback_list {
 	struct callback_list *next;
 };
 
+enum request_type {
+   STARPU_DATA_REQUEST_COPY,
+   STARPU_DATA_REQUEST_READ,
+   STARPU_DATA_REQUEST_WRITE
+};
+
 LIST_CREATE_TYPE(starpu_data_request,
 	starpu_spinlock_t lock;
 	unsigned refcnt;
 
+   enum request_type type;
+   void * interface;
+
+   starpu_event event;
+
 	starpu_data_handle handle;
-	uint32_t src_node;
-	uint32_t dst_node;
+   uint32_t src_node;
+   uint32_t dst_node;
 
 	uint32_t handling_node;
 
