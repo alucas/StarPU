@@ -67,7 +67,7 @@ starpu_job_t __attribute__((malloc)) _starpu_job_create(struct starpu_task *task
    job->event = _starpu_event_create();
    _starpu_event_retain_private(job->event);
 
-   _starpu_trigger_init(&job->trigger, &_starpu_job_trigger_callback, job);
+   _starpu_trigger_init(&job->trigger, &_starpu_job_trigger_callback, job, NULL);
    job->ready = 0;
 
 	job->footprint_is_computed = 0;
