@@ -17,24 +17,19 @@
 #include <core/event.h>
 #include <core/trigger.h>
 
-static void trigger_callback(void*);
-
 starpu_event starpu_event_group_create(int num_events, starpu_event *events) {
-   starpu_event event = _starpu_event_create();
-   starpu_event_retain(event);
+   starpu_event event;
 
-   starpu_trigger trigger = _starpu_trigger_create(&trigger_callback, event);
+   starpu_trigger trigger = _starpu_trigger_create(NULL, NULL, &event);
+   /* We switch from private event retaining to public retaining */
+   if (event != NULL) {
+      starpu_event_retain(event);
+      _starpu_event_release_private(event);
+   }
 
    _starpu_trigger_events_register(trigger, num_events, events);
 
    _starpu_trigger_enable(trigger);
 
    return event;
-}
-
-static void trigger_callback(void*data) {
-   starpu_event event = (starpu_event)data;
-
-   _starpu_event_complete(event);
-   _starpu_event_release_private(event);
 }

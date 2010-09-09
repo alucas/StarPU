@@ -59,9 +59,9 @@ int starpu_event_profiling_worker_id(starpu_event);
 starpu_event starpu_event_group_create(int num_events, starpu_event *events);
 
 /* Add a callback function to an event */
-int starpu_event_callback_add(starpu_event, void (*func)(void*), void*data);
+int starpu_event_callback_add(starpu_event, void (*func)(void*), void*data, starpu_event*);
 /* Add a callback function to a group of events */
-int starpu_event_group_callback_add(int num_event, starpu_event *events, void (*func)(void*), void*data);
+int starpu_event_group_callback_add(int num_event, starpu_event *events, void (*func)(void*), void*data, starpu_event*);
 
 #ifdef __cplusplus
 }
