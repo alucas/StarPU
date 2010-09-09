@@ -27,17 +27,17 @@ struct event_callback {
 
 void event_callback_callback(void*arg);
 
-int starpu_event_callback_add(starpu_event event, void (*func)(void*), void*data) {
-   return starpu_event_group_callback_add(1, &event, func, data);
+int starpu_event_callback_add(starpu_event event, void (*func)(void*), void*data, starpu_event *ev) {
+   return starpu_event_group_callback_add(1, &event, func, data, ev);
 }
 
-int starpu_event_group_callback_add(int num_events, starpu_event *events, void (*func)(void*), void*data) {
+int starpu_event_group_callback_add(int num_events, starpu_event *events, void (*func)(void*), void*data, starpu_event *event) {
    struct event_callback *ec;
    ec = malloc(sizeof(struct event_callback));
 
    ec->func = func;
    ec->data = data;
-   _starpu_trigger_init(&ec->trigger, &event_callback_callback, ec);
+   _starpu_trigger_init(&ec->trigger, &event_callback_callback, ec, event);
    _starpu_trigger_events_register(&ec->trigger, num_events, events);
    _starpu_trigger_enable(&ec->trigger);
 

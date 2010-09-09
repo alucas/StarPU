@@ -28,11 +28,12 @@ struct starpu_trigger_t {
 
    int enabled;
    int allocated;
+   starpu_event event;
 };
 
-starpu_trigger _starpu_trigger_create(void (*callback)(void*), void*data);
+starpu_trigger _starpu_trigger_create(void (*callback)(void*), void*data, starpu_event *event);
 
-void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void *data);
+void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void *data, starpu_event *event);
 
 void _starpu_trigger_events_register(starpu_trigger, int num_events, starpu_event *events);
 

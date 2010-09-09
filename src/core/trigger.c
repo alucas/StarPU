@@ -20,18 +20,18 @@
 #include <core/trigger.h>
 #include <core/event.h>
 
-starpu_trigger _starpu_trigger_create(void (*callback)(void*), void*data) {
+starpu_trigger _starpu_trigger_create(void (*callback)(void*), void*data, starpu_event *event) {
    starpu_trigger trigger;
 
    trigger = malloc(sizeof(struct starpu_trigger_t));
-   _starpu_trigger_init(trigger, callback, data);
+   _starpu_trigger_init(trigger, callback, data, event);
 
    trigger->allocated = 1;
 
    return trigger;
 }
 
-void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void *data) {
+void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void *data, starpu_event *event) {
 
    trigger->data = data;
    trigger->callback = callback;
@@ -39,6 +39,15 @@ void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void 
    trigger->dep_count = 1;
    trigger->enabled = 0;
    trigger->allocated = 0;
+
+   if (event != NULL) {
+      trigger->event = _starpu_event_create();
+      _starpu_event_retain_private(trigger->event);
+      *event = trigger->event;
+   }
+   else {
+      trigger->event = NULL;
+   }
 }
 
 void _starpu_trigger_events_register(starpu_trigger trigger, int num_events, starpu_event *events) {
@@ -64,10 +73,17 @@ void _starpu_trigger_signal(starpu_trigger trigger) {
    if (dep_count == 0) {
       void (*callback)(void*) = trigger->callback;
       void *data = trigger->data;
+      starpu_event event = trigger->event;
 
       if (trigger->allocated)
          free(trigger);
 
-      callback(data);
+      if (callback != NULL)
+         callback(data);
+
+      if (event != NULL) {
+         _starpu_event_complete(event);
+         _starpu_event_release_private(event);
+      }
    }
 }
