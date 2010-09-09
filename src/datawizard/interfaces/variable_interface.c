@@ -17,6 +17,7 @@
 
 #include <starpu.h>
 #include <common/config.h>
+#include <core/event.h>
 #include <datawizard/coherency.h>
 #include <datawizard/copy_driver.h>
 #include <datawizard/filters.h>
@@ -26,6 +27,8 @@
 #include <drivers/opencl/opencl.h>
 
 static int copy_ram_to_ram(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node __attribute__((unused)));
+
+
 #ifdef STARPU_USE_CUDA
 static int copy_ram_to_cuda(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node __attribute__((unused)));
 static int copy_cuda_to_ram(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node __attribute__((unused)));
@@ -33,6 +36,7 @@ static int copy_ram_to_cuda_async(void *src_interface, unsigned src_node, void *
 static int copy_cuda_to_ram_async(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node __attribute__((unused)), cudaStream_t *stream);
 #endif
 #ifdef STARPU_USE_OPENCL
+#include <CL/cl.h>
 static int copy_ram_to_opencl(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node __attribute__((unused)));
 static int copy_opencl_to_ram(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node __attribute__((unused)));
 static int copy_ram_to_opencl_async(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node __attribute__((unused)), void *_event);
@@ -350,14 +354,14 @@ static int copy_ram_to_cuda_async(void *src_interface, unsigned src_node __attri
 
 #ifdef STARPU_USE_OPENCL
 static int copy_ram_to_opencl_async(void *src_interface, unsigned src_node __attribute__((unused)), void *dst_interface,
-                                    unsigned dst_node __attribute__((unused)), void *_event)
+                                    unsigned dst_node __attribute__((unused)), starpu_event *event)
 {
 	starpu_variable_interface_t *src_variable = src_interface;
 	starpu_variable_interface_t *dst_variable = dst_interface;
         int err,ret;
 
         err = _starpu_opencl_copy_ram_to_opencl_async_sync((void*)src_variable->ptr, (cl_mem)dst_variable->ptr, src_variable->elemsize,
-                                                           0, (cl_event*)_event, &ret);
+                                                           0, event, &ret);
         if (STARPU_UNLIKELY(err))
                 STARPU_OPENCL_REPORT_ERROR(err);
 
@@ -366,14 +370,14 @@ static int copy_ram_to_opencl_async(void *src_interface, unsigned src_node __att
 	return ret;
 }
 
-static int copy_opencl_to_ram_async(void *src_interface, unsigned src_node __attribute__((unused)), void *dst_interface, unsigned dst_node __attribute__((unused)), void *_event)
+static int copy_opencl_to_ram_async(void *src_interface, unsigned src_node __attribute__((unused)), void *dst_interface, unsigned dst_node __attribute__((unused)), starpu_event *event)
 {
 	starpu_variable_interface_t *src_variable = src_interface;
 	starpu_variable_interface_t *dst_variable = dst_interface;
         int err, ret;
 
 	err = _starpu_opencl_copy_opencl_to_ram_async_sync((cl_mem)src_variable->ptr, (void*)dst_variable->ptr, src_variable->elemsize,
-                                                           0, (cl_event*)_event, &ret);
+                                                           0, event, &ret);
 
         if (STARPU_UNLIKELY(err))
                 STARPU_OPENCL_REPORT_ERROR(err);

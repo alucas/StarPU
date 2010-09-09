@@ -74,9 +74,9 @@ struct starpu_data_copy_methods {
 	/* for asynchronous OpenCL transfers */
 	/* XXX we do not use a cl_event *event type for the last argument
 	 * because nvcc does not like when we have to include OpenCL headers */
-        int (*ram_to_opencl_async)(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node, /* cl_event * */ void *event);
-	int (*opencl_to_ram_async)(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node, /* cl_event * */ void *event);
-	int (*opencl_to_opencl_async)(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node, /* cl_event * */ void *event);
+        int (*ram_to_opencl_async)(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node, starpu_event *event);
+	int (*opencl_to_ram_async)(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node, starpu_event *event);
+	int (*opencl_to_opencl_async)(void *src_interface, unsigned src_node, void *dst_interface, unsigned dst_node, starpu_event *event);
 #endif
 };
 
@@ -202,6 +202,8 @@ void starpu_variable_data_register(starpu_data_handle *handle, uint32_t home_nod
                         uintptr_t ptr, size_t elemsize);
 size_t starpu_variable_get_elemsize(starpu_data_handle handle);
 uintptr_t starpu_variable_get_local_ptr(starpu_data_handle handle);
+
+int starpu_variable_data_enqueue_read_buffer(starpu_data_handle *handle, void*dst, int num_events, starpu_event *events, starpu_event *event);
 
 /* helper methods */
 #define STARPU_VARIABLE_GET_PTR(interface)	(((starpu_variable_interface_t *)(interface))->ptr)

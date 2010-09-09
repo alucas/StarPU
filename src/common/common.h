@@ -26,5 +26,6 @@
 
 typedef struct starpu_driver_t *starpu_driver;
 typedef struct starpu_buffer_t * starpu_buffer;
+typedef struct starpu_memory_node_t * starpu_memory_node;
 
 #endif //COMMON_H
