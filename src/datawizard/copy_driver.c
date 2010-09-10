@@ -16,6 +16,7 @@
 
 #include <starpu.h>
 #include <common/config.h>
+#include <common/common.h>
 #include <common/utils.h>
 #include <core/sched_policy.h>
 #include <datawizard/datastats.h>
@@ -29,7 +30,8 @@
 
 struct starpu_readwrite_buffer_args {
    void * interface;
-   starpu_data_handle handle;
+   starpu_data_handle src_handle;
+   starpu_data_handle dst_handle;
    starpu_event event;
 };
 
@@ -90,11 +92,12 @@ static unsigned communication_cnt = 0;
 
 static void enqueue_read_callback(void*data);
 
-int starpu_data_read_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event) {
+//FIXME: we don't consider offset!!! We assume that ptr targets the same kind of data structure as handle
+int starpu_data_read_buffer(starpu_data_handle handle, void*ptr, size_t UNUSED(offset), size_t size, int num_events, starpu_event *events, starpu_event *event) {
 
    struct starpu_readwrite_buffer_args * arg = malloc(sizeof(struct starpu_readwrite_buffer_args));
-   arg->handle = handle;
-   arg->interface = interface;
+   arg->src_handle = handle;
+   starpu_variable_data_register(&arg->dst_handle, 0, (uintptr_t)ptr, size);
    arg->event = _starpu_event_create();
 
    /* We switch from private event retaining to public retaining */
@@ -119,39 +122,37 @@ static void enqueue_read_callback_callback(void*data) {
 static void enqueue_read_callback(void*data) {
    struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
 
-   int src_node = _starpu_select_src_node(arg->handle);
+   int src_node = _starpu_select_src_node(arg->src_handle);
 
-   starpu_data_request_t r = _starpu_create_data_request(arg->handle, src_node, -1, src_node, STARPU_R, 0);
-   r->type = STARPU_DATA_REQUEST_READ;
-   r->interface = arg->interface;
+   starpu_data_request_t r = _starpu_create_data_request(arg->src_handle, src_node, arg->dst_handle, 0, src_node, STARPU_R, 0);
 
    _starpu_data_request_append_callback(r, enqueue_read_callback_callback, arg->event);
 
    _starpu_post_data_request(r, src_node);
 }
 
-static int copy_data_1_to_1_generic(starpu_data_handle handle, uint32_t src_node, uint32_t dst_node, struct starpu_data_request_s *req __attribute__((unused)))
+static int copy_data_1_to_1_generic(starpu_data_handle src_handle, uint32_t src_node, starpu_data_handle dst_handle, uint32_t dst_node, struct starpu_data_request_s *req __attribute__((unused)))
 {
 	int ret = 0;
 
-	const struct starpu_data_copy_methods *copy_methods = handle->ops->copy_methods;
+	const struct starpu_data_copy_methods *copy_methods = src_handle->ops->copy_methods;
 
 	starpu_node_kind src_kind = _starpu_get_node_kind(src_node);
 	starpu_node_kind dst_kind = _starpu_get_node_kind(dst_node);
 
-	STARPU_ASSERT(handle->per_node[src_node].refcnt);
-	STARPU_ASSERT(handle->per_node[dst_node].refcnt);
+	STARPU_ASSERT(src_handle->per_node[src_node].refcnt);
+	STARPU_ASSERT(dst_handle->per_node[dst_node].refcnt);
 
-	STARPU_ASSERT(handle->per_node[src_node].allocated);
-	STARPU_ASSERT(handle->per_node[dst_node].allocated);
+	STARPU_ASSERT(src_handle->per_node[src_node].allocated);
+	STARPU_ASSERT(dst_handle->per_node[dst_node].allocated);
 
 #ifdef STARPU_USE_CUDA
 	cudaError_t cures;
 	cudaStream_t *stream;
 #endif
 
-	void *src_interface = starpu_data_get_interface_on_node(handle, src_node);
-	void *dst_interface = starpu_data_get_interface_on_node(handle, dst_node);
+	void *src_interface = starpu_data_get_interface_on_node(src_handle, src_node);
+	void *dst_interface = starpu_data_get_interface_on_node(dst_handle, dst_node);
 
 	switch (_STARPU_MEMORY_NODE_TUPLE(src_kind,dst_kind)) {
 	case _STARPU_MEMORY_NODE_TUPLE(STARPU_CPU_RAM,STARPU_CPU_RAM):
@@ -246,33 +247,33 @@ static int copy_data_1_to_1_generic(starpu_data_handle handle, uint32_t src_node
 	return ret;
 }
 
-int __attribute__((warn_unused_result)) _starpu_driver_copy_data_1_to_1(starpu_data_handle handle, uint32_t src_node, 
+int __attribute__((warn_unused_result)) _starpu_driver_copy_data_1_to_1(starpu_data_handle src_handle, uint32_t src_node, starpu_data_handle dst_handle,
 		uint32_t dst_node, unsigned donotread, struct starpu_data_request_s *req, unsigned may_alloc)
 {
 	if (!donotread)
 	{
-		STARPU_ASSERT(handle->per_node[src_node].allocated);
-		STARPU_ASSERT(handle->per_node[src_node].refcnt);
+		STARPU_ASSERT(src_handle->per_node[src_node].allocated);
+		STARPU_ASSERT(src_handle->per_node[src_node].refcnt);
 	}
 
 	int ret_alloc, ret_copy;
 	unsigned __attribute__((unused)) com_id = 0;
 
 	/* first make sure the destination has an allocated buffer */
-	ret_alloc = _starpu_allocate_memory_on_node(handle, dst_node, may_alloc);
+	ret_alloc = _starpu_allocate_memory_on_node(dst_handle, dst_node, may_alloc);
 	if (ret_alloc)
 		goto nomem;
 
-	STARPU_ASSERT(handle->per_node[dst_node].allocated);
-	STARPU_ASSERT(handle->per_node[dst_node].refcnt);
+	STARPU_ASSERT(dst_handle->per_node[dst_node].allocated);
+	STARPU_ASSERT(dst_handle->per_node[dst_node].refcnt);
 
 	/* if there is no need to actually read the data, 
 	 * we do not perform any transfer */
 	if (!donotread) {
-		STARPU_ASSERT(handle->ops);
+		STARPU_ASSERT(src_handle->ops);
 		//STARPU_ASSERT(handle->ops->copy_data_1_to_1);
 
-		size_t size = _starpu_data_get_size(handle);
+		size_t size = _starpu_data_get_size(src_handle);
 		_starpu_bus_update_profiling_info((int)src_node, (int)dst_node, size);
 		
 #ifdef STARPU_USE_FXT
@@ -284,12 +285,12 @@ int __attribute__((warn_unused_result)) _starpu_driver_copy_data_1_to_1(starpu_d
 
 		/* for now we set the size to 0 in the FxT trace XXX */
 		STARPU_TRACE_START_DRIVER_COPY(src_node, dst_node, 0, com_id);
-		ret_copy = copy_data_1_to_1_generic(handle, src_node, dst_node, req);
+		ret_copy = copy_data_1_to_1_generic(src_handle, src_node, dst_handle, dst_node, req);
 
 #ifdef STARPU_USE_FXT
 		if (ret_copy != EAGAIN)
 		{
-			size_t size = _starpu_data_get_size(handle);
+			size_t size = _starpu_data_get_size(src_handle);
 			STARPU_TRACE_END_DRIVER_COPY(src_node, dst_node, size, com_id);
 		}
 #endif
