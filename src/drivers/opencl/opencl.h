@@ -26,41 +26,22 @@
 #include <CL/cl.h>
 
 #include <CL/cl.h>
-#include <core/device.h>
 
-typedef struct starpu_opencl_device_t *starpu_opencl_device;
-
-struct starpu_opencl_device_t {
-   STARPU_DRIVER_OBJECT;
-   cl_platform_id platform_id;
-   cl_device_id device_id;
-   cl_context context;
-   cl_command_queue command_queue;
-};
-
-extern
 int _starpu_opencl_init_context(int devid);
 
-extern
 int _starpu_opencl_deinit_context(int devid);
 
-extern
 unsigned _starpu_opencl_get_device_count(void);
 
-extern
 int _starpu_opencl_allocate_memory(void **addr, size_t size, cl_mem_flags flags);
 
-extern
 int _starpu_opencl_copy_ram_to_opencl(void *ptr, cl_mem buffer, size_t size, size_t offset, cl_event *event);
 
-extern
 int _starpu_opencl_copy_opencl_to_ram(cl_mem buffer, void *ptr, size_t size, size_t offset, cl_event *event);
 
-extern
-int _starpu_opencl_copy_ram_to_opencl_async_sync(void *ptr, cl_mem buffer, size_t size, size_t offset, cl_event *event, int *ret);
+int _starpu_opencl_copy_ram_to_opencl_async_sync(void *ptr, cl_mem buffer, size_t size, size_t offset, starpu_event *event, int *ret);
 
-extern
-int _starpu_opencl_copy_opencl_to_ram_async_sync(cl_mem buffer, void *ptr, size_t size, size_t offset, cl_event *event, int *ret);
+int _starpu_opencl_copy_opencl_to_ram_async_sync(cl_mem buffer, void *ptr, size_t size, size_t offset, starpu_event *event, int *ret);
 
 #if 0
 extern
@@ -74,10 +55,8 @@ int _starpu_opencl_copy_rect_ram_to_opencl(void *ptr, cl_mem buffer, const size_
                                            size_t host_row_pitch, size_t host_slice_pitch, cl_event *event);
 #endif
 
-extern
 void _starpu_opencl_init(void);
 
-extern
 void *_starpu_opencl_worker(void *);
 
 #endif // STARPU_USE_OPENCL
