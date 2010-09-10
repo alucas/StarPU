@@ -114,9 +114,11 @@ int starpu_data_read_buffer(starpu_data_handle handle, void*ptr, size_t UNUSED(o
 }
 
 static void enqueue_read_callback_callback(void*data) {
-   starpu_event event = (starpu_event)data;
-   _starpu_event_complete(event);
-   _starpu_event_release_private(event);
+   struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
+   _starpu_event_complete(arg->event);
+   _starpu_event_release_private(arg->event);
+   starpu_data_unregister(arg->dst_handle);
+   free(arg);
 }
 
 static void enqueue_read_callback(void*data) {
@@ -126,7 +128,7 @@ static void enqueue_read_callback(void*data) {
 
    starpu_data_request_t r = _starpu_create_data_request(arg->src_handle, src_node, arg->dst_handle, 0, src_node, STARPU_R, 0);
 
-   _starpu_data_request_append_callback(r, enqueue_read_callback_callback, arg->event);
+   _starpu_data_request_append_callback(r, enqueue_read_callback_callback, arg);
 
    _starpu_post_data_request(r, src_node);
 }
