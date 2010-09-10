@@ -33,10 +33,6 @@ LIST_DECLARE_TYPE(starpu_data_request);
 #include <cublas.h>
 #endif
 
-#ifdef STARPU_USE_OPENCL
-#include <CL/cl.h>
-#endif
-
 struct starpu_data_request_s;
 
 /* this is a structure that can be queried to see whether an asynchronous
@@ -45,9 +41,6 @@ typedef union {
 	int dummy;
 #ifdef STARPU_USE_CUDA
 	cudaEvent_t cuda_event;
-#endif
-#ifdef STARPU_USE_OPENCL
-        cl_event opencl_event;
 #endif
 } starpu_async_channel;
 
