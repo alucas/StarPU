@@ -41,4 +41,6 @@ void _starpu_trigger_enable(starpu_trigger trigger);
 
 void _starpu_trigger_signal(starpu_trigger trigger);
 
+int starpu_event_bind(starpu_event source, starpu_event dest);
+
 #endif // __TRIGGER_H__
