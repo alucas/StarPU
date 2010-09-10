@@ -45,15 +45,15 @@ static cl_uint nb_devices = -1;
 extern char *_starpu_opencl_program_dir;
 
 void starpu_opencl_get_device(int devid, cl_device_id *dev) {
-   dev = &devices[devid];
+   *dev = devices[devid];
 }
 
 void starpu_opencl_get_queue(int devid, cl_command_queue *queue) {
-   queue = &queues[devid];
+   *queue = queues[devid];
 }
 
 void starpu_opencl_get_context(int devid, cl_context *context) {
-   context = &contexts[devid];
+   *context = contexts[devid];
 }
 
 int _starpu_opencl_init_context(int devid)

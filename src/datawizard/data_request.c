@@ -264,7 +264,8 @@ static void starpu_handle_data_request_completion(starpu_data_request_t r)
 		starpu_data_request_destroy(r);
 
 	_starpu_spin_unlock(&r->src_handle->header_lock);
-	_starpu_spin_unlock(&r->dst_handle->header_lock);
+   if (r->src_handle != r->dst_handle)
+      _starpu_spin_unlock(&r->dst_handle->header_lock);
 
 	/* We do the callback once the lock is released so that they can do
 	 * blocking operations with the handle (eg. release it) */
@@ -282,7 +283,8 @@ static void starpu_handle_data_request_completion(starpu_data_request_t r)
 static int starpu_handle_data_request(starpu_data_request_t r, unsigned may_alloc)
 {
 	_starpu_spin_lock(&r->src_handle->header_lock);
-	_starpu_spin_lock(&r->dst_handle->header_lock);
+   if (r->src_handle != r->dst_handle)
+   	_starpu_spin_lock(&r->dst_handle->header_lock);
 
 	_starpu_spin_lock(&r->lock);
 
@@ -300,7 +302,8 @@ static int starpu_handle_data_request(starpu_data_request_t r, unsigned may_allo
 	{
 		_starpu_spin_unlock(&r->lock);
 		_starpu_spin_unlock(&r->src_handle->header_lock);
-		_starpu_spin_unlock(&r->dst_handle->header_lock);
+      if (r->src_handle != r->dst_handle)
+         _starpu_spin_unlock(&r->dst_handle->header_lock);
 
 		return ENOMEM;
 	}
@@ -309,7 +312,8 @@ static int starpu_handle_data_request(starpu_data_request_t r, unsigned may_allo
 	{
 		_starpu_spin_unlock(&r->lock);
 		_starpu_spin_unlock(&r->src_handle->header_lock);
-		_starpu_spin_unlock(&r->dst_handle->header_lock);
+      if (r->src_handle != r->dst_handle)
+         _starpu_spin_unlock(&r->dst_handle->header_lock);
 
 		/* the request is pending and we put it in the corresponding queue  */
 		PTHREAD_MUTEX_LOCK(&data_requests_pending_list_mutex[r->handling_node]);
@@ -389,7 +393,8 @@ static void _handle_pending_node_data_requests(uint32_t src_node, unsigned force
 		r = starpu_data_request_list_pop_back(local_list);
 
 		_starpu_spin_lock(&r->src_handle->header_lock);
-		_starpu_spin_lock(&r->dst_handle->header_lock);
+      if (r->src_handle != r->dst_handle)
+         _starpu_spin_lock(&r->dst_handle->header_lock);
 	
 		_starpu_spin_lock(&r->lock);
 	
@@ -408,7 +413,8 @@ static void _handle_pending_node_data_requests(uint32_t src_node, unsigned force
 			else {
 				_starpu_spin_unlock(&r->lock);
 				_starpu_spin_unlock(&r->src_handle->header_lock);
-				_starpu_spin_unlock(&r->dst_handle->header_lock);
+            if (r->src_handle != r->dst_handle)
+               _starpu_spin_unlock(&r->dst_handle->header_lock);
 
 				/* wake the requesting worker up */
 				PTHREAD_MUTEX_LOCK(&data_requests_pending_list_mutex[src_node]);

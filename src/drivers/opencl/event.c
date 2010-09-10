@@ -14,19 +14,18 @@
  * See the GNU Lesser General Public License in COPYING.LGPL for more details.
  */
 
-#ifdef STARPU_USE_OPENCL
-
 #include <CL/cl.h>
 #include <starpu_event.h>
 #include <core/event.h>
+#include <common/common.h>
 #include <drivers/opencl/event.h>
 
-static void opencl_event_callback(cl_event event, cl_int status, void *user_data) {
+static void opencl_event_callback(cl_event event, cl_int UNUSED(status), void *user_data) {
    starpu_event ev = (starpu_event)user_data;
 
    _starpu_event_complete(ev);
 
-   _starpu_event_release_private(event);
+   _starpu_event_release_private(ev);
    clReleaseEvent(event);
 }
 
@@ -46,5 +45,3 @@ int _starpu_opencl_event_bind(cl_event clevent, starpu_event event) {
 
    return (ret != CL_SUCCESS);
 }
-
-#endif // STARPU_USE_OPENCL
