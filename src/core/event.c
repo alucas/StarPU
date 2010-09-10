@@ -314,7 +314,7 @@ void _starpu_event_complete(starpu_event event) {
  * are equal to 0.
  */
 int _starpu_event_free(starpu_event event) {
-   assert(event->complete && event->ref_count == 0 && event->ref_count_priv == 0);
+   assert(event->ref_count == 0 && event->ref_count_priv == 0);
 
    while (event->cond_wait_count != 0);
 
