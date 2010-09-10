@@ -218,7 +218,9 @@ static int copy_data_1_to_1_generic(starpu_data_handle src_handle, uint32_t src_
 				copy_methods->opencl_to_ram(src_interface, src_node, dst_interface, dst_node);
 			}
 			else {
-				ret = copy_methods->opencl_to_ram_async(src_interface, src_node, dst_interface, dst_node, &(req->async_channel.opencl_event));
+            starpu_event event;
+				ret = copy_methods->opencl_to_ram_async(src_interface, src_node, dst_interface, dst_node, &event);
+            starpu_event_bind(event, req->event);
 			}
 		}
 		else {
@@ -235,7 +237,9 @@ static int copy_data_1_to_1_generic(starpu_data_handle src_handle, uint32_t src_
 			copy_methods->ram_to_opencl(src_interface, src_node, dst_interface, dst_node);
 		}
 		else {
-			ret = copy_methods->ram_to_opencl_async(src_interface, src_node, dst_interface, dst_node, &(req->async_channel.opencl_event));
+         starpu_event event;
+			ret = copy_methods->ram_to_opencl_async(src_interface, src_node, dst_interface, dst_node, &event);
+         starpu_event_bind(event, req->event);
 		}
 		break;
 #endif
@@ -330,13 +334,7 @@ void _starpu_driver_wait_request_completion(starpu_data_request_t req __attribut
 #endif
 #ifdef STARPU_USE_OPENCL
       case STARPU_OPENCL_RAM:
-         {
-            cl_event opencl_event = req->async_channel.opencl_event;
-            if (opencl_event == NULL) STARPU_ABORT();
-            cl_int err = clWaitForEvents(1, &opencl_event);
-            if (err != CL_SUCCESS) STARPU_OPENCL_REPORT_ERROR(err);
-            clReleaseEvent(opencl_event);
-         }
+         starpu_event_wait(req->event);
          break;
 #endif
 		case STARPU_CPU_RAM:
@@ -367,15 +365,8 @@ unsigned _starpu_driver_test_request_completion(starpu_data_request_t req __attr
 #endif
 #ifdef STARPU_USE_OPENCL
       case STARPU_OPENCL_RAM:
-         {
-            cl_int event_status;
-            cl_event opencl_event = req->async_channel.opencl_event;
-            if (opencl_event == NULL) STARPU_ABORT();
-            cl_int err = clGetEventInfo(opencl_event, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(event_status), &event_status, NULL);
-            if (err != CL_SUCCESS) STARPU_OPENCL_REPORT_ERROR(err);
-            success = (event_status == CL_COMPLETE);
-            break;
-         }
+         success = starpu_event_test(req->event);
+         break;
 #endif
       case STARPU_CPU_RAM:
       default:

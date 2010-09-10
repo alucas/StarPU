@@ -17,6 +17,7 @@
 #include <starpu.h>
 #include <common/config.h>
 #include <datawizard/datawizard.h>
+#include <core/event.h>
 
 /* requests that have not been treated at all */
 static starpu_data_request_list_t data_requests[STARPU_MAXNODES];
