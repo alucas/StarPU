@@ -54,8 +54,9 @@ typedef union {
 void _starpu_wake_all_blocked_workers_on_node(unsigned nodeid);
 
 __attribute__((warn_unused_result))
-int _starpu_driver_copy_data_1_to_1(starpu_data_handle handle, uint32_t node, 
-		uint32_t requesting_node, unsigned donotread, struct starpu_data_request_s *req, unsigned may_allloc);
+int _starpu_driver_copy_data_1_to_1(starpu_data_handle src_handle, uint32_t src_node, 
+                                    starpu_data_handle dst_handle, uint32_t dst_node,
+		unsigned donotread, struct starpu_data_request_s *req, unsigned may_allloc);
 
 unsigned _starpu_driver_test_request_completion(starpu_data_request_t req, unsigned handling_node);
 void _starpu_driver_wait_request_completion(starpu_data_request_t req, unsigned handling_node);
