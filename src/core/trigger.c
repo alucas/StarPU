@@ -87,3 +87,33 @@ void _starpu_trigger_signal(starpu_trigger trigger) {
       }
    }
 }
+
+struct event_bind_arg {
+   starpu_event src;
+   starpu_event dst;
+};
+
+static void event_bind_callback(void *data) {
+   struct event_bind_arg * arg = (struct event_bind_arg*)data;
+   _starpu_event_complete(arg->dst);
+   _starpu_event_release_private(arg->src);
+   _starpu_event_release_private(arg->dst);
+   free(arg);
+}
+
+int starpu_event_bind(starpu_event source, starpu_event dest) {
+   struct event_bind_arg * arg = malloc(sizeof(struct event_bind_arg));
+   starpu_trigger trigger;
+
+   _starpu_event_retain_private(source);
+   _starpu_event_retain_private(dest);
+
+   arg->src = source;
+   arg->dst = dest;
+
+   trigger = _starpu_trigger_create(&event_bind_callback, arg, NULL);
+   _starpu_trigger_events_register(trigger, 1, &source);
+   _starpu_trigger_enable(trigger);
+
+   return 0;
+}
