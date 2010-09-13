@@ -21,15 +21,6 @@
 #include <starpu_event.h>
 #include <core/trigger.h>
 
-typedef struct starpu_event_methods_t {
-   /* Wait for event completion */
-   int (*wait)(starpu_event);
-
-   /* Free */
-   int (*free)(starpu_event);
-} * starpu_event_methods;
-
-
 /* Create an event */
 starpu_event _starpu_event_create();
 

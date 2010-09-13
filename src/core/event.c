@@ -25,8 +25,11 @@
 #include <profiling/profiling.h>
 
 struct starpu_event_t {
-   /* Indicates if it is a user event */
-   int user_event;
+   int (*wait)(starpu_event);
+   int (*test)(starpu_event);
+   int (*getType)(starpu_event, unsigned*);
+   int (*getStatus)(starpu_event, unsigned*);
+   int (*release)(starpu_event);
 
    /* Public reference counter */
    volatile int ref_count;
@@ -34,26 +37,16 @@ struct starpu_event_t {
    /* Private reference counter */
    volatile int ref_count_priv;
 
-   /* Indicates if this event is complete */
-   volatile int complete;
-
-   /* Mutex & Cond */
-   pthread_mutex_t mutex;
-   pthread_cond_t cond;
-   volatile int cond_wait_count;
-
-   /* Profiling */
-   int profiling_enabled;
-	struct timespec prof_submit_time;
-	struct timespec prof_start_time;
-	struct timespec prof_end_time;
-	int prof_workerid;
-
    /* Associated triggers */
    int trigger_count;
    int trigger_size;
    starpu_trigger * triggers;
-};
+
+   /* Mutex */
+   pthread_mutex_t mutex;
+
+   void *data;
+}
 
 
 int _starpu_event_free(starpu_event);
@@ -64,20 +57,8 @@ int _starpu_event_free(starpu_event);
 /******************/
 
 /* PUBLIC */
-
 int starpu_event_release(starpu_event event) {
-   _starpu_event_lock(event);
-
-   event->ref_count--;
-
-   int free = (event->ref_count == 0 && event->ref_count_priv == 0);
-
-   _starpu_event_unlock(event);
-
-   if (free)
-      _starpu_event_free(event);
-
-   return 0;
+   return event->release(event);
 }
 
 int starpu_event_release_all(int num_events, starpu_event *events) {
@@ -107,27 +88,9 @@ int starpu_event_retain_all(int num_events, starpu_event *events) {
 }
 
 int starpu_event_wait(starpu_event event) {
-	if (STARPU_UNLIKELY(!_starpu_worker_may_perform_blocking_calls()))
-		return -EDEADLK;
-
-   /* We can avoid mutex locking if event is already complete */
-   if (!event->complete) {
-
-      _starpu_event_lock(event);
-      
-      event->cond_wait_count += 1;
-
-      while (!event->complete) {
-         pthread_cond_wait(&event->cond, &event->mutex);
-      }
-
-      event->cond_wait_count -= 1;
-
-      _starpu_event_unlock(event);
-   }
-
-   return 0;
+   return event->wait(event);
 }
+
 
 int starpu_event_wait_all(int num_events, starpu_event *events) {
 	if (STARPU_UNLIKELY(!_starpu_worker_may_perform_blocking_calls()))
@@ -156,7 +119,7 @@ int starpu_event_wait_and_release_all(int num_events, starpu_event *events) {
 }
 
 int starpu_event_test(starpu_event event) {
-   return event->complete;
+   return event->test(event);
 }
 
 int starpu_event_test_all(int num_events, starpu_event *events) {
@@ -167,19 +130,6 @@ int starpu_event_test_all(int num_events, starpu_event *events) {
    }
 
    return 1;
-}
-
-starpu_event starpu_event_create() {
-   starpu_event event = _starpu_event_create();
-   event->user_event = 1;
-   event->ref_count = 1;
-   event->ref_count_priv = 0;
-   return event;
-}
-
-void starpu_event_trigger(starpu_event event) {
-   assert(event->user_event);
-   _starpu_event_complete(event);
 }
 
 /* PRIVATE */
@@ -205,7 +155,6 @@ starpu_event _starpu_event_create() {
 
    ev->ref_count = 0;
    ev->ref_count_priv = 1;
-   ev->complete = 0;
 
    ev->trigger_count = 0;
    ev->trigger_size = 5;
