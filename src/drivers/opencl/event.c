@@ -25,7 +25,6 @@ static void opencl_event_callback(cl_event event, cl_int UNUSED(status), void *u
 
    _starpu_event_complete(ev);
 
-   _starpu_event_release_private(ev);
    clReleaseEvent(event);
 }
 
@@ -39,6 +38,7 @@ starpu_event _starpu_opencl_event_create(cl_event event) {
 }
 
 int _starpu_opencl_event_bind(cl_event clevent, starpu_event event) {
+
    _starpu_event_retain_private(event);
 
    cl_int ret = clSetEventCallback(clevent, CL_COMPLETE, opencl_event_callback, event);

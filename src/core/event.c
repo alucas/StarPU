@@ -265,6 +265,8 @@ int _starpu_event_trigger_register(starpu_event event, starpu_trigger trigger) {
    }
    else {
 
+      _starpu_event_retain_private(event);
+
       _starpu_event_lock(event);
 
       if (event->complete) {
@@ -293,6 +295,7 @@ int _starpu_event_trigger_register(starpu_event event, starpu_trigger trigger) {
 }
 
 void _starpu_event_complete(starpu_event event) {
+
    _starpu_event_lock(event);
 
    assert(!event->complete);
@@ -305,6 +308,7 @@ void _starpu_event_complete(starpu_event event) {
    int i;
    for (i=0; i<event->trigger_count; i++) {
       _starpu_trigger_signal(event->triggers[i]);
+      _starpu_event_release_private(event);
    }
 
    _starpu_event_release_private(event);

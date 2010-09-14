@@ -115,9 +115,10 @@ int _starpu_opencl_copy_ram_to_opencl_async_sync(void *ptr, cl_mem buffer, size_
    err = clEnqueueWriteBuffer(queues[worker->devid], buffer, blocking, offset, size, ptr, 0, NULL, ev);
 
    if (STARPU_LIKELY(err == CL_SUCCESS)) {
-      if (event != NULL)
+      if (event != NULL) {
          *event = _starpu_opencl_event_create(clevent);
-      *ret = (event == NULL) ? 0 : EAGAIN;
+      }
+      *ret = 0;
       return EXIT_SUCCESS;
    }
    else {
