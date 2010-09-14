@@ -63,8 +63,9 @@ void _starpu_trigger_events_register(starpu_trigger trigger, int num_events, sta
 void _starpu_trigger_enable(starpu_trigger trigger) {
    assert(!trigger->enabled);
 
-   _starpu_trigger_signal(trigger);
    trigger->enabled = 1;
+
+   _starpu_trigger_signal(trigger);
 }
 
 void _starpu_trigger_signal(starpu_trigger trigger) {
