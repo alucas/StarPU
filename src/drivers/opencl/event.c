@@ -29,7 +29,7 @@ static void opencl_event_callback(cl_event event, cl_int UNUSED(status), void *u
 }
 
 starpu_event _starpu_opencl_event_create(cl_event event) {
-
+   
    starpu_event ev = _starpu_event_create();
 
    _starpu_opencl_event_bind(event, ev);
