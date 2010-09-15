@@ -35,13 +35,13 @@ unsigned _starpu_opencl_get_device_count(void);
 
 int _starpu_opencl_allocate_memory(void **addr, size_t size, cl_mem_flags flags);
 
-int _starpu_opencl_copy_ram_to_opencl(void *ptr, cl_mem buffer, size_t size, size_t offset, cl_event *event);
+int _starpu_opencl_copy_ram_to_opencl(void *ptr, cl_mem buffer, size_t size, size_t offset);
 
-int _starpu_opencl_copy_opencl_to_ram(cl_mem buffer, void *ptr, size_t size, size_t offset, cl_event *event);
+int _starpu_opencl_copy_opencl_to_ram(cl_mem buffer, void *ptr, size_t size, size_t offset);
 
-int _starpu_opencl_copy_ram_to_opencl_async_sync(void *ptr, cl_mem buffer, size_t size, size_t offset, starpu_event *event, int *ret);
+int _starpu_opencl_copy_ram_to_opencl_async(void *ptr, cl_mem buffer, size_t size, size_t offset, starpu_event *event, int *ret);
 
-int _starpu_opencl_copy_opencl_to_ram_async_sync(cl_mem buffer, void *ptr, size_t size, size_t offset, starpu_event *event, int *ret);
+int _starpu_opencl_copy_opencl_to_ram_async(cl_mem buffer, void *ptr, size_t size, size_t offset, starpu_event *event, int *ret);
 
 #if 0
 extern
