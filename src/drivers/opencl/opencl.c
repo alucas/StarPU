@@ -253,6 +253,8 @@ void _starpu_opencl_init(void)
          queues[i] = NULL;
       }
 
+      _starpu_opencl_events_init();
+
       init_done=1;
    }
 }
