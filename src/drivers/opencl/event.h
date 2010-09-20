@@ -23,6 +23,7 @@
 
 #include <CL/cl.h>
 
+void _starpu_opencl_events_init();
 starpu_event _starpu_opencl_event_create(cl_event);
 int _starpu_opencl_event_bind(cl_event clevent, starpu_event event);
 

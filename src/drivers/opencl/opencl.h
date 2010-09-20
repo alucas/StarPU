@@ -25,8 +25,6 @@
 
 #include <CL/cl.h>
 
-#include <CL/cl.h>
-
 int _starpu_opencl_init_context(int devid);
 
 int _starpu_opencl_deinit_context(int devid);
