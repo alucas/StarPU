@@ -79,6 +79,7 @@ void starpu_data_set_default_sequential_consistency_flag(unsigned flag);
 void starpu_data_query_status(starpu_data_handle handle, int memory_node, int *is_allocated, int *is_valid, int *is_requested);
 
 int starpu_data_read_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event);
+int starpu_data_write_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event);
 
 #ifdef __cplusplus
 }
