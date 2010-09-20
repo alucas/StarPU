@@ -33,6 +33,7 @@ struct starpu_readwrite_buffer_args {
    starpu_data_handle src_handle;
    starpu_data_handle dst_handle;
    starpu_event event;
+   int direction;
 };
 
 void _starpu_wake_all_blocked_workers_on_node(unsigned nodeid)
@@ -90,48 +91,81 @@ void starpu_wake_all_blocked_workers(void)
 static unsigned communication_cnt = 0;
 #endif
 
-static void enqueue_read_callback(void*data);
+
+static void enqueue_readwrite_callback_callback(void*data) {
+   struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
+   _starpu_event_complete(arg->event);
+   _starpu_event_release_private(arg->event);
+   if (arg->direction)
+      starpu_data_unregister(arg->dst_handle);
+   else
+      starpu_data_unregister(arg->src_handle);
+   free(arg);
+}
+
+static void enqueue_readwrite_callback(void*data) {
+   struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
+
+
+   if (arg->direction) {
+      /* Read */
+      int src_node = _starpu_select_src_node(arg->src_handle);
+      starpu_data_request_t r = _starpu_create_data_request(arg->src_handle, src_node, arg->dst_handle, 0, src_node, STARPU_R, 0);
+      _starpu_data_request_append_callback(r, enqueue_readwrite_callback_callback, arg);
+      _starpu_post_data_request(r, src_node);
+   }
+   else {
+      /* write */
+      starpu_data_request_t r = _starpu_create_data_request(arg->dst_handle, 0, arg->src_handle, 0, 0, STARPU_R, 0);
+      _starpu_data_request_append_callback(r, enqueue_readwrite_callback_callback, arg);
+      _starpu_post_data_request(r, 0);
+   }
+}
 
 //FIXME: we don't consider offset!!! We assume that ptr targets the same kind of data structure as handle
-int starpu_data_read_buffer(starpu_data_handle handle, void*ptr, size_t UNUSED(offset), size_t size, int num_events, starpu_event *events, starpu_event *event) {
+static int starpu_data_readwrite_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event, int direction){
+   //FIXME
+   assert(offset == 0);
+
+   /* Create temporary variable data on host */
+   starpu_data_handle handle2;
+   starpu_variable_data_register(&handle2, 0, (uintptr_t)ptr, size);
 
    struct starpu_readwrite_buffer_args * arg = malloc(sizeof(struct starpu_readwrite_buffer_args));
-   arg->src_handle = handle;
-   starpu_variable_data_register(&arg->dst_handle, 0, (uintptr_t)ptr, size);
+   arg->direction = direction;
+
+   if (direction) {
+      arg->src_handle = handle;
+      arg->dst_handle = handle2;
+   }
+   else {
+      arg->src_handle = handle2;
+      arg->dst_handle = handle;
+   }
+
    arg->event = _starpu_event_create();
 
-   /* We switch from private event retaining to public retaining */
    if (event != NULL) {
       starpu_event_retain(arg->event);
       *event = arg->event;
    }
 
-   starpu_trigger trigger = _starpu_trigger_create(enqueue_read_callback, arg, NULL);
+   /* We create a trigger that will post the request */
+   starpu_trigger trigger = _starpu_trigger_create(enqueue_readwrite_callback, arg, NULL);
    _starpu_trigger_events_register(trigger, num_events, events);
    _starpu_trigger_enable(trigger);
 
    return 0;
 }
 
-static void enqueue_read_callback_callback(void*data) {
-   struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
-   _starpu_event_complete(arg->event);
-   _starpu_event_release_private(arg->event);
-   starpu_data_unregister(arg->dst_handle);
-   free(arg);
+int starpu_data_read_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event) {
+   return starpu_data_readwrite_buffer(handle, ptr, offset, size, num_events, events, event, 1);
 }
 
-static void enqueue_read_callback(void*data) {
-   struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
-
-   int src_node = _starpu_select_src_node(arg->src_handle);
-
-   starpu_data_request_t r = _starpu_create_data_request(arg->src_handle, src_node, arg->dst_handle, 0, src_node, STARPU_R, 0);
-
-   _starpu_data_request_append_callback(r, enqueue_read_callback_callback, arg);
-
-   _starpu_post_data_request(r, src_node);
+int starpu_data_write_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event) {
+   return starpu_data_readwrite_buffer(handle, ptr, offset, size, num_events, events, event, 0);
 }
+
 
 static int copy_data_1_to_1_generic(starpu_data_handle src_handle, uint32_t src_node, starpu_data_handle dst_handle, uint32_t dst_node, struct starpu_data_request_s *req __attribute__((unused)))
 {

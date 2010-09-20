@@ -78,6 +78,7 @@ void starpu_data_set_default_sequential_consistency_flag(unsigned flag);
 unsigned starpu_data_test_if_allocated_on_node(starpu_data_handle handle, uint32_t memory_node);
 
 int starpu_data_read_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event);
+int starpu_data_write_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event);
 
 #ifdef __cplusplus
 }
