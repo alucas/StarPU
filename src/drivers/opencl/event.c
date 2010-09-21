@@ -74,9 +74,9 @@ void * thread_routine(void *UNUSED(arg)) {
 void _starpu_opencl_events_init() {
    pthread_mutex_init(&blist_mutex, NULL);
    pthread_cond_init(&blist_cond, NULL);
-   pthread_create(&thread, NULL, thread_routine, NULL);
-
    blist = opencl_event_binding_list_new();
+
+   pthread_create(&thread, NULL, thread_routine, NULL);
 }
 
 int _starpu_opencl_event_version(cl_event event) {

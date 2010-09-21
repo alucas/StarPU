@@ -122,7 +122,7 @@ static void enqueue_readwrite_callback(void*data) {
    }
 }
 
-//FIXME: we don't consider offset!!! We assume that ptr targets the same kind of data structure as handle
+//FIXME: we don't support offset!!! We assume that ptr targets the same kind of data structure as handle
 static int starpu_data_readwrite_buffer(starpu_data_handle handle, void*ptr, size_t offset, size_t size, int num_events, starpu_event *events, starpu_event *event, int direction){
    //FIXME
    assert(offset == 0);
