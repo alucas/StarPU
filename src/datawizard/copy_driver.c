@@ -116,7 +116,7 @@ static void enqueue_readwrite_callback(void*data) {
    }
    else {
       /* write */
-      starpu_data_request_t r = _starpu_create_data_request(arg->dst_handle, 0, arg->src_handle, 0, 0, STARPU_R, 0);
+      starpu_data_request_t r = _starpu_create_data_request(arg->dst_handle, 0, arg->src_handle, 0, 0, STARPU_W, 0);
       _starpu_data_request_append_callback(r, enqueue_readwrite_callback_callback, arg);
       _starpu_post_data_request(r, 0);
    }
