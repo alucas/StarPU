@@ -40,7 +40,7 @@ void increment_token()
 	task->cl = &increment_cl;
 	task->buffers[0].handle = token_handle;
 	task->buffers[0].mode = STARPU_RW;
-	starpu_task_submit(task);
+	starpu_task_submit(task, NULL);
 }
 
 void callback(void *arg __attribute__ ((unused)))
@@ -50,7 +50,7 @@ void callback(void *arg __attribute__ ((unused)))
 
 int main(int argc, char **argv)
 {
-	int i;
+	unsigned i;
 
         starpu_init(NULL);
 	starpu_variable_data_register(&token_handle, 0, (uintptr_t)&token, sizeof(unsigned));

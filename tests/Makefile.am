@@ -195,11 +195,6 @@ core_empty_task_sync_point_SOURCES =		\
 	core/empty_task_sync_point.c
 
 testbin_PROGRAMS +=				\
-	core/empty_task_sync_point_tasks
-core_empty_task_sync_point_tasks_SOURCES =	\
-	core/empty_task_sync_point_tasks.c
-
-testbin_PROGRAMS +=				\
 	core/empty_task_chain
 core_empty_task_chain_SOURCES =			\
 	core/empty_task_chain.c
@@ -352,11 +347,6 @@ testbin_PROGRAMS +=				\
 	helper/execute_on_all
 helper_execute_on_all_SOURCES =			\
 	helper/execute_on_all.c
-
-testbin_PROGRAMS +=				\
-	helper/starpu_create_sync_task
-helper_starpu_create_sync_task_SOURCES =	\
-	helper/starpu_create_sync_task.c
 
 testbin_PROGRAMS +=				\
 	microbenchs/async_tasks_overhead

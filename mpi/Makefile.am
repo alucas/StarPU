@@ -14,6 +14,7 @@
 # See the GNU Lesser General Public License in COPYING.LGPL for more details.
 #
 
+
 CC=$(MPICC)
 
 TESTS = $(check_PROGRAMS)
@@ -23,6 +24,7 @@ check_PROGRAMS =
 BUILT_SOURCES =
 
 CLEANFILES = *.gcno *.gcda *.linkinfo
+
 
 EXTRA_DIST = 					\
 	examples/mpi_lu/float.h			\
@@ -90,7 +92,7 @@ examples_mpi_lu_plu_example_float_SOURCES =	\
 	examples/mpi_lu/plu_solve_float.c	\
 	examples/mpi_lu/pslu_kernels.c		\
 	examples/mpi_lu/pslu.c			\
-	$(top_srcdir)/examples/common/blas.c
+	examples/common/blas.c
 
 examples_mpi_lu_plu_example_double_LDADD =	\
 	libstarpumpi.la
@@ -100,7 +102,7 @@ examples_mpi_lu_plu_example_double_SOURCES =	\
 	examples/mpi_lu/plu_solve_double.c  	\
 	examples/mpi_lu/pdlu_kernels.c	    	\
 	examples/mpi_lu/pdlu.c		    	\
-	$(top_srcdir)/examples/common/blas.c
+	examples/common/blas.c
 endif
 
 mpiexamplebin_PROGRAMS =				\
@@ -194,3 +196,4 @@ tests_ring_SOURCES += tests/ring_kernel.cu
 tests_ring_async_SOURCES += tests/ring_kernel.cu
 tests_ring_async_implicit_SOURCES += tests/ring_kernel.cu
 endif
+

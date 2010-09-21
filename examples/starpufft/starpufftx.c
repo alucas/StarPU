@@ -324,7 +324,7 @@ STARPUFFT(free)(void *p)
 void
 STARPUFFT(showstats)(FILE *out)
 {
-	int worker;
+	unsigned worker;
 	unsigned total;
 
 #define TIMING(begin,end) (double)((end.tv_sec - begin.tv_sec)*1000000 + (end.tv_usec - begin.tv_usec))

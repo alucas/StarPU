@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <common/config.h>
 #include <common/utils.h>
+#include <common/common.h>
 #include <core/workers.h>
 #include <core/debug.h>
 #include <core/task.h>
@@ -346,11 +347,13 @@ unsigned _starpu_machine_is_running(void)
 	return config.running;
 }
 
-unsigned _starpu_worker_can_block(unsigned memnode)
-{
 #ifdef STARPU_NON_BLOCKING_DRIVERS
+unsigned _starpu_worker_can_block(unsigned UNUSED(memnode))
+{
 	return 0;
 #else
+unsigned _starpu_worker_can_block(unsigned memnode)
+{
 	unsigned can_block = 1;
 
 	if (!_starpu_check_that_no_data_request_exists(memnode))

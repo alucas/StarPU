@@ -21,7 +21,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/include/ -I$(top_srcdir)/examples/ -I$(top_builddi
 TESTS	=	coverage/coverage.sh	\
 		$(check_PROGRAMS)
 
-SUBDIRS = stencil
+SUBDIRS = 
+
+#FIXME
+#SUBDIRS = stencil
 
 if STARPU_HAVE_FFTW
 if STARPU_HAVE_FFTWL

@@ -680,20 +680,6 @@ AC_DEFINE_UNQUOTED(STARPU_NMAXWORKERS, [$nmaxworkers], [Maximum number of worker
 #                                                                             #
 ###############################################################################
 
-AC_ARG_WITH(mpicc, [AS_HELP_STRING([--with-mpicc[=<path to mpicc>]],
-			[Path of the mpicc compiler])],
-	[
-		if test x$withval = xyes; then
-			AC_MSG_ERROR(--with-mpicc must be given a pathname)
-		else
-			mpicc_path=$withval
-		fi
-	],
-	[
-		# nothing was specified: default value is used
-		AC_PATH_PROG(mpicc_path, mpicc, [no], [])
-	])
-
 # We test if the MPICC compiler exists
 if test ! -x $mpicc_path; then
 	#MPICC does not exists or is not executable

@@ -19,7 +19,7 @@ CLEANFILES = *.gcno *.gcda *.linkinfo
 
 SUBDIRS = src
 if USE_MPI
-SUBDIRS += mpi
+#SUBDIRS += mpi
 endif
 SUBDIRS += tools examples tests doc
 

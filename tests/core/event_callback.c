@@ -29,7 +29,7 @@ int main() {
 
    event = starpu_event_create();
 
-   starpu_event_callback_add(event, &callback, &val);
+   starpu_event_callback_add(event, &callback, &val, NULL);
 
    starpu_event_trigger(event);
    starpu_event_release(event);
