@@ -93,6 +93,7 @@ check_PROGRAMS += 				\
 	core/get_current_task			\
 	core/event_callback			\
 	core/event_callback_blocking			\
+	core/trigger			\
 	datawizard/data_implicit_deps		\
 	datawizard/scratch			\
 	datawizard/sync_and_notify_data		\
@@ -188,6 +189,9 @@ core_event_callback_SOURCES =			\
 
 core_event_callback_blocking_SOURCES =			\
 	core/event_callback_blocking.c
+
+core_trigger_SOURCES =			\
+	core/trigger.c
 
 datawizard_data_implicit_deps_SOURCES =		\
 	datawizard/data_implicit_deps.c

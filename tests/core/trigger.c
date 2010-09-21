@@ -17,34 +17,42 @@
 #include <starpu.h>
 #include <unistd.h>
 
-void callback(void*);
+void callback(void*data);
+
+volatile int result = 0;
 
 int main() {
 
-   starpu_event event;
-   int val = 0;
-   unsigned count = 10;
+   starpu_event event,event2;
 
 	starpu_init(NULL);
 
    event = starpu_event_create();
 
-   starpu_event_callback_add(event, &callback, &val, NULL);
+   starpu_trigger trigger;
+   trigger = _starpu_trigger_create(&callback, NULL, &event2);
+
+   _starpu_trigger_events_register(trigger, 1, &event);
+
+   starpu_trigger_enable(trigger);
+
+   sleep(1);
+   result = -2;
+
+   fprintf(stderr, "Trigger enabled. Activating event...\n");
 
    starpu_event_trigger(event);
-   starpu_event_release(event);
 
-   while ((volatile int)val != 999 && count != 0) {
-      count -= 1;
-      usleep(50);
-   }
+   fprintf(stderr, "Event enabled\n");
+
+   starpu_event_wait(event2);
 
 	starpu_shutdown();
 
-   return (val != 999 ? -1 : 0);
+   return result;
 }
 
 void callback(void*data) {
-   int * val = (int*)data;
-   *val = 999;
+   result = 0;
+   fprintf(stderr, "Trigger triggered\n");
 }

@@ -50,7 +50,7 @@ int main() {
 
    event2 = starpu_event_create();
 
-   starpu_event_callback_add(event, &callback, event2);
+   starpu_event_callback_add(event, &callback, event2, NULL);
 
    starpu_event_trigger(event2);
 

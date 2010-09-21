@@ -276,7 +276,7 @@ int _starpu_event_trigger_register(starpu_event event, starpu_trigger trigger) {
       else {
          /* Register trigger */
          if (event->trigger_count == event->trigger_size) {
-            event->trigger_size *= 2;
+            event->trigger_size = 1 + event->trigger_size * 2;
             event->triggers = realloc(event->triggers, event->trigger_size * sizeof(starpu_trigger));
          }
          event->triggers[event->trigger_count] = trigger;

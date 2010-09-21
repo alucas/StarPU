@@ -22,6 +22,16 @@
 #include <common/list.h>
 #include <drivers/opencl/event.h>
 
+static void opencl_event_callback(cl_event event, cl_int status, void *user_data) {
+   starpu_event ev = (starpu_event)user_data;
+
+   fprintf(stderr, "clevent %p status %d\n", event, status);
+
+   _starpu_event_complete(ev);
+
+   clReleaseEvent(event);
+}
+
 /* OpenCL event manager
  * This is only useful for OpenCL1.0 which doesn't support clSetEventCallback
  */
@@ -55,8 +65,7 @@ void * thread_routine(void *UNUSED(arg)) {
          b = opencl_event_binding_list_next(b);
 
          if (status == CL_COMPLETE) {
-            _starpu_event_complete(b2->event);
-            clReleaseEvent(b2->clevent);
+            opencl_event_callback(b2->clevent, status, b2->event);
 
             pthread_mutex_lock(&blist_mutex);
             opencl_event_binding_list_erase(blist, b2);
@@ -110,13 +119,6 @@ int _starpu_opencl_event_version(cl_event event) {
    }
 }
 
-static void opencl_event_callback(cl_event event, cl_int UNUSED(status), void *user_data) {
-   starpu_event ev = (starpu_event)user_data;
-
-   _starpu_event_complete(ev);
-
-   clReleaseEvent(event);
-}
 
 starpu_event _starpu_opencl_event_create(cl_event event) {
    

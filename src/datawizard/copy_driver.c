@@ -106,6 +106,8 @@ static void enqueue_readwrite_callback_callback(void*data) {
 static void enqueue_readwrite_callback(void*data) {
    struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
 
+   _starpu_spin_lock(&arg->src_handle->header_lock);
+   _starpu_spin_lock(&arg->dst_handle->header_lock);
 
    if (arg->direction) {
       /* Read */
@@ -120,6 +122,9 @@ static void enqueue_readwrite_callback(void*data) {
       _starpu_data_request_append_callback(r, enqueue_readwrite_callback_callback, arg);
       _starpu_post_data_request(r, 0);
    }
+
+   _starpu_spin_unlock(&arg->src_handle->header_lock);
+   _starpu_spin_unlock(&arg->dst_handle->header_lock);
 }
 
 //FIXME: we don't support offset!!! We assume that ptr targets the same kind of data structure as handle
