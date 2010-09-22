@@ -94,6 +94,9 @@ static unsigned communication_cnt = 0;
 
 static void enqueue_readwrite_callback_callback(void*data) {
    struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
+
+   _STARPU_DEBUG("Read/Write %p completed\n", arg);
+
    _starpu_event_complete(arg->event);
    _starpu_event_release_private(arg->event);
    if (arg->direction)
@@ -106,19 +109,21 @@ static void enqueue_readwrite_callback_callback(void*data) {
 static void enqueue_readwrite_callback(void*data) {
    struct starpu_readwrite_buffer_args * arg = (struct starpu_readwrite_buffer_args*)data;
 
+   _STARPU_DEBUG("Read/Write %p callback\n", arg);
+
    _starpu_spin_lock(&arg->src_handle->header_lock);
    _starpu_spin_lock(&arg->dst_handle->header_lock);
 
    if (arg->direction) {
       /* Read */
       int src_node = _starpu_select_src_node(arg->src_handle);
-      starpu_data_request_t r = _starpu_create_data_request(arg->src_handle, src_node, arg->dst_handle, 0, src_node, STARPU_R, 0);
+      starpu_data_request_t r = _starpu_create_data_request(arg->src_handle, src_node, arg->dst_handle, 0, src_node, STARPU_RW, 0);
       _starpu_data_request_append_callback(r, enqueue_readwrite_callback_callback, arg);
       _starpu_post_data_request(r, src_node);
    }
    else {
       /* write */
-      starpu_data_request_t r = _starpu_create_data_request(arg->dst_handle, 0, arg->src_handle, 0, 0, STARPU_W, 0);
+      starpu_data_request_t r = _starpu_create_data_request(arg->dst_handle, 0, arg->src_handle, 0, 0, STARPU_RW, 0);
       _starpu_data_request_append_callback(r, enqueue_readwrite_callback_callback, arg);
       _starpu_post_data_request(r, 0);
    }

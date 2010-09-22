@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <core/trigger.h>
 #include <core/event.h>
+#include <common/common.h>
 
 starpu_trigger _starpu_trigger_create(void (*callback)(void*), void*data, starpu_event *event) {
    starpu_trigger trigger;
@@ -53,6 +54,8 @@ void _starpu_trigger_init(starpu_trigger trigger, void (*callback)(void*), void 
 void _starpu_trigger_events_register(starpu_trigger trigger, int num_events, starpu_event *events) {
    assert(!trigger->enabled);
 
+   _STARPU_DEBUG("trigger %p: %d events registered\n", trigger, num_events);
+
    __sync_fetch_and_add(&trigger->dep_count, num_events);
 
    int i;
@@ -72,6 +75,9 @@ void _starpu_trigger_signal(starpu_trigger trigger) {
    int dep_count =__sync_sub_and_fetch(&trigger->dep_count, 1);
 
    if (dep_count == 0) {
+      
+      _STARPU_DEBUG("trigger %p triggered\n", trigger);
+
       void (*callback)(void*) = trigger->callback;
       void *data = trigger->data;
       starpu_event event = trigger->event;

@@ -717,7 +717,7 @@ static int copy_ram_to_opencl_async(void *src_interface, unsigned src_node __att
 {
    starpu_block_interface_t *src_block = src_interface;
    starpu_block_interface_t *dst_block = dst_interface;
-   int err,ret;
+   int err;
 
    uint32_t nx = src_block->nx;
    uint32_t ny = src_block->ny;
@@ -729,9 +729,9 @@ static int copy_ram_to_opencl_async(void *src_interface, unsigned src_node __att
       /* Is that a single contiguous buffer ? */
       if (((nx*ny) == src_block->ldz) && (src_block->ldz == dst_block->ldz))
       {
-         err = _starpu_opencl_copy_ram_to_opencl_async((void*)src_block->ptr, (cl_mem)dst_block->dev_handle,
+         err = _starpu_opencl_copy_ram_to_opencl((void*)src_block->ptr, (cl_mem)dst_block->dev_handle,
                src_block->nx*src_block->ny*src_block->nz*src_block->elemsize,
-               dst_block->offset, event, &ret);
+               dst_block->offset, event);
          if (STARPU_UNLIKELY(err))
             STARPU_OPENCL_REPORT_ERROR(err);
       }
@@ -752,7 +752,7 @@ static int copy_ram_to_opencl_async(void *src_interface, unsigned src_node __att
             err = _starpu_opencl_copy_ram_to_opencl(ptr, (cl_mem)dst_block->dev_handle,
                   src_block->nx*src_block->elemsize,
                   layer*dst_block->ldz*dst_block->elemsize + j*dst_block->ldy*dst_block->elemsize
-                  + dst_block->offset);
+                  + dst_block->offset, NULL);
             if (STARPU_UNLIKELY(err))
                STARPU_OPENCL_REPORT_ERROR(err);
          }
@@ -777,14 +777,14 @@ static int copy_ram_to_opencl_async(void *src_interface, unsigned src_node __att
 
    STARPU_TRACE_DATA_COPY(src_node, dst_node, src_block->nx*src_block->ny*src_block->nz*src_block->elemsize);
 
-   return ret;
+   return EAGAIN;
 }
 
 static int copy_opencl_to_ram_async(void *src_interface, unsigned src_node __attribute__((unused)), void *dst_interface, unsigned dst_node __attribute__((unused)), starpu_event *event)
 {
    starpu_block_interface_t *src_block = src_interface;
    starpu_block_interface_t *dst_block = dst_interface;
-   int err, ret;
+   int err;
 
    /* We may have a contiguous buffer for the entire block, or contiguous
     * plans within the block, we can avoid many small transfers that way */
@@ -793,9 +793,9 @@ static int copy_opencl_to_ram_async(void *src_interface, unsigned src_node __att
       /* Is that a single contiguous buffer ? */
       if (((src_block->nx*src_block->ny) == src_block->ldz) && (src_block->ldz == dst_block->ldz))
       {
-         err = _starpu_opencl_copy_opencl_to_ram_async((cl_mem)src_block->dev_handle, (void*)dst_block->ptr,
+         err = _starpu_opencl_copy_opencl_to_ram((cl_mem)src_block->dev_handle, (void*)dst_block->ptr,
                src_block->nx*src_block->ny*src_block->nz*src_block->elemsize,
-               src_block->offset, event, &ret);
+               src_block->offset, event);
          if (STARPU_UNLIKELY(err))
             STARPU_OPENCL_REPORT_ERROR(err);
       }
@@ -817,7 +817,7 @@ static int copy_opencl_to_ram_async(void *src_interface, unsigned src_node __att
             err = _starpu_opencl_copy_opencl_to_ram((void*)src_block->dev_handle, ptr,
                   src_block->nx*src_block->elemsize,
                   layer*src_block->ldz*src_block->elemsize+j*src_block->ldy*src_block->elemsize+
-                  src_block->offset);
+                  src_block->offset, NULL);
          }
          //                        const size_t buffer_origin[3] = {src_block->offset, 0, 0};
          //                        const size_t host_origin[3] = {layer*src_block->ldz*src_block->elemsize, 0, 0};
@@ -836,7 +836,7 @@ static int copy_opencl_to_ram_async(void *src_interface, unsigned src_node __att
 
    STARPU_TRACE_DATA_COPY(src_node, dst_node, src_block->nx*src_block->ny*src_block->nz*src_block->elemsize);
 
-   return ret;
+   return EAGAIN;
 }
 
 static int copy_ram_to_opencl(void *src_interface, unsigned src_node __attribute__((unused)), void *dst_interface, unsigned dst_node __attribute__((unused)))

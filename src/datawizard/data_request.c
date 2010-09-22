@@ -230,7 +230,7 @@ static void starpu_handle_data_request_completion(starpu_data_request_t r)
 	_starpu_update_data_state(r->dst_handle, dst_node, r->mode);
 
 #ifdef STARPU_USE_FXT
-	size_t size = _starpu_data_get_size(src_handle);
+	size_t size = _starpu_data_get_size(r->src_handle);
 	STARPU_TRACE_END_DRIVER_COPY(src_node, dst_node, size, r->com_id);
 #endif
 

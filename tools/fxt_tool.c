@@ -1034,7 +1034,7 @@ int main(int argc, char **argv)
 		uint64_t M = 0;
 
 		unsigned found_one_sync_point = 0;
-		int key;
+		int key = 0;
 		unsigned display_mpi = 0; 
 
 		/* Compute all start_k */

@@ -22,6 +22,7 @@
 #include <core/event.h>
 #include <core/errorcheck.h>
 #include <common/timing.h>
+#include <common/common.h>
 #include <profiling/profiling.h>
 
 struct starpu_event_t {
@@ -295,6 +296,8 @@ int _starpu_event_trigger_register(starpu_event event, starpu_trigger trigger) {
 }
 
 void _starpu_event_complete(starpu_event event) {
+
+   _STARPU_DEBUG("event %p completed\n", event);
 
    _starpu_event_lock(event);
 

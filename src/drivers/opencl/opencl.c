@@ -103,67 +103,48 @@ int _starpu_opencl_allocate_memory(void **addr, size_t size, cl_mem_flags flags)
    return EXIT_SUCCESS;
 }
 
-int _starpu_opencl_copy_ram_to_opencl_async(void *ptr, cl_mem buffer, size_t size, size_t offset, starpu_event *event, int *ret)
+int _starpu_opencl_copy_ram_to_opencl(void *ptr, cl_mem buffer, size_t size, size_t offset, starpu_event *event)
 {
    int err;
    struct starpu_worker_s *worker = _starpu_get_local_worker_key();
    cl_event clevent;
 
-   STARPU_ASSERT(event != NULL);
-
-   err = clEnqueueWriteBuffer(queues[worker->devid], buffer, CL_FALSE, offset, size, ptr, 0, NULL, &clevent);
-
-   if (STARPU_LIKELY(err == CL_SUCCESS)) {
-      *event = _starpu_opencl_event_create(clevent);
-      *ret = 0;
-      return EXIT_SUCCESS;
+   if (event == NULL) {
+      err = clEnqueueWriteBuffer(queues[worker->devid], buffer, CL_TRUE, offset, size, ptr, 0, NULL, NULL);
    }
    else {
-      STARPU_OPENCL_REPORT_ERROR(err);
-      return err;
+      err = clEnqueueWriteBuffer(queues[worker->devid], buffer, CL_FALSE, offset, size, ptr, 0, NULL, &clevent);
    }
-}
 
-int _starpu_opencl_copy_ram_to_opencl(void *ptr, cl_mem buffer, size_t size, size_t offset)
-{
-   int err;
-   struct starpu_worker_s *worker = _starpu_get_local_worker_key();
+   if (err != CL_SUCCESS)
+      STARPU_OPENCL_REPORT_ERROR(err);
 
-   err = clEnqueueWriteBuffer(queues[worker->devid], buffer, CL_TRUE, offset, size, ptr, 0, NULL, NULL);
-   if (err != CL_SUCCESS) STARPU_OPENCL_REPORT_ERROR(err);
+   if (event != NULL) {
+      *event = _starpu_opencl_event_create(clevent);
+   }
 
    return EXIT_SUCCESS;
 }
 
-int _starpu_opencl_copy_opencl_to_ram_async(cl_mem buffer, void *ptr, size_t size, size_t offset, starpu_event *event, int *ret)
+int _starpu_opencl_copy_opencl_to_ram(cl_mem buffer, void *ptr, size_t size, size_t offset, starpu_event *event)
 {
    int err;
    struct starpu_worker_s *worker = _starpu_get_local_worker_key();
    cl_event clevent;
 
-   STARPU_ASSERT(event != NULL);
-
-   err = clEnqueueReadBuffer(queues[worker->devid], buffer, CL_FALSE, offset, size, ptr, 0, NULL, &clevent);
-   if (STARPU_LIKELY(err == CL_SUCCESS)) {
-      *event = _starpu_opencl_event_create(clevent);
-      *ret = 0;
-      return EXIT_SUCCESS;
+   if (event == NULL) {
+      err = clEnqueueReadBuffer(queues[worker->devid], buffer, CL_TRUE, offset, size, ptr, 0, NULL, NULL);
    }
    else {
-      STARPU_OPENCL_REPORT_ERROR(err);
-      return err;
+      err = clEnqueueReadBuffer(queues[worker->devid], buffer, CL_FALSE, offset, size, ptr, 0, NULL, &clevent);
    }
 
-   return EXIT_SUCCESS;
-}
+   if (err != CL_SUCCESS)
+      STARPU_OPENCL_REPORT_ERROR(err);
 
-int _starpu_opencl_copy_opencl_to_ram(cl_mem buffer, void *ptr, size_t size, size_t offset)
-{
-   int err;
-   struct starpu_worker_s *worker = _starpu_get_local_worker_key();
-
-   err = clEnqueueReadBuffer(queues[worker->devid], buffer, CL_TRUE, offset, size, ptr, 0, NULL, NULL);
-   if (err != CL_SUCCESS) STARPU_OPENCL_REPORT_ERROR(err);
+   if (event != NULL) {
+      *event = _starpu_opencl_event_create(clevent);
+   }
 
    return EXIT_SUCCESS;
 }

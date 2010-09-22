@@ -24,6 +24,8 @@
    #define UNUSED(x) x 
 #endif
 
+#define _STARPU_DEBUG(m...) fprintf(stderr,m);
+
 typedef struct starpu_driver_t *starpu_driver;
 typedef struct starpu_buffer_t * starpu_buffer;
 typedef struct starpu_memory_node_t * starpu_memory_node;

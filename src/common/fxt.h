@@ -212,7 +212,7 @@ do {										\
 		&& task->cl->model						\
 		&& task->cl->model->symbol)					\
 	{									\
-		char *symbol = task->cl->model->symbol;				\
+		const char *symbol = task->cl->model->symbol;				\
 		STARPU_FUT_DO_PROBE4STR(STARPU_FUT_TASK_DONE, (job)->job_id, syscall(SYS_gettid), (long unsigned)exclude_from_dag, 1, symbol);\
 	}									\
 	else {									\
