@@ -97,12 +97,13 @@ static void enqueue_readwrite_callback_callback(void*data) {
 
    _STARPU_DEBUG("Read/Write %p completed\n", arg);
 
-   _starpu_event_complete(arg->event);
-   _starpu_event_release_private(arg->event);
    if (arg->direction)
       starpu_data_unregister(arg->dst_handle);
    else
       starpu_data_unregister(arg->src_handle);
+
+   _starpu_event_complete(arg->event);
+   _starpu_event_release_private(arg->event);
    free(arg);
 }
 
@@ -123,7 +124,7 @@ static void enqueue_readwrite_callback(void*data) {
    }
    else {
       /* write */
-      starpu_data_request_t r = _starpu_create_data_request(arg->dst_handle, 0, arg->src_handle, 0, 0, STARPU_RW, 0);
+      starpu_data_request_t r = _starpu_create_data_request(arg->src_handle, 0, arg->dst_handle, 0, 0, STARPU_RW, 0);
       _starpu_data_request_append_callback(r, enqueue_readwrite_callback_callback, arg);
       _starpu_post_data_request(r, 0);
    }
